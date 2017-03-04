@@ -45,7 +45,7 @@ module DiscordBot
 				return true
 			end
 
-			message = "="*80 + "\n#{ r[ :groups ][ 0 ][ :name ] } [ http://vk.com/wall#{ g }_#{ resp[ :id ] } ]\n"
+			message = "="*80 + "\n __**#{ r[ :groups ][ 0 ][ :name ] }**__ [ http://vk.com/wall#{ g }_#{ resp[ :id ] } ]\n"
 			attach = resp[ :attachments ][ 0 ]
 
 			if resp[ :text ] != "" then message = message + "#{ resp[ :text ].gsub( "<br>", "\n" ).gsub( /#[^\s]+([\s\n]*)?/, "" ) }\n" end
@@ -54,27 +54,27 @@ module DiscordBot
 			when "photo"
 				p = attach[ :photo ]
 
-				image = "-#- Изображение: #{ p[ :src_big ] }\n"
+				image = "**-#-** Изображение: #{ p[ :src_big ] }\n"
 				text = ""
 
 				if p[ :text ] != '' then 
-					text = "-#- Комментарий к изображению: #{ p[ :text ].gsub( /https?:[^\s]+/, "-ссылка удалена-" ) }\n"
+					text = "**-#-** Комментарий к изображению: #{ p[ :text ].gsub( /https?:[^\s]+/, "-ссылка удалена-" ) }\n"
 				end
 
 				message = message + text + image
 			when "video"
 				p = attach[ :video ]
 
-				url = "-#- Видео: http://vk.com/video#{ g }_#{ p[ :id ] }\n"
-				title = "-#- Название: #{ p[ :title ] }\n"
+				url = "**-#-** Видео: http://vk.com/video#{ g }_#{ p[ :id ] }\n"
+				title = "**-#-** Название: #{ p[ :title ] }\n"
 				img = p[ :image_big ]
 
 				message = message + title + url
 			when "doc"
 				p = attach[ :doc ]
 
-				title = "-#- Название: #{ p[ :title ] }\n"
-				url = "-#- Ссылка: #{ p[ :url ] }\n"
+				title = "**-#-** Название: #{ p[ :title ] }\n"
+				url = "**-#-** Ссылка: #{ p[ :url ] }\n"
 
 				message = message + title + url
 			end

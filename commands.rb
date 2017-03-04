@@ -1,7 +1,6 @@
 module DiscordBot
 	module Commands
 	  class Commands
-
 		def initialize( client )
 			@client = client
 			@bot = client.bot
@@ -10,6 +9,8 @@ module DiscordBot
 		end
 
 		def new_user_join( e )
+			g = e.server.roles.find { |r| r.name == "Новички" }
+			e.user.add_role( g )
 			e.server.general_channel.send_message "Добро пожаловать на сервер, <@#{e.user.id}>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
 		end
 
@@ -41,6 +42,17 @@ module DiscordBot
 			@client.save_config
 
 			e.respond "<@#{ e.user.id }>, ID группы #{ g } добавлен в список групп для новостей."
+		end
+
+		def avatar( e, a )
+			if a.to_s !~ /<@!?\d*>/ then
+				e.respond "Неправильно выбран участник."
+				return
+			end
+
+			a = a.gsub( /[^\d]+/, "" ).to_i
+			u = @bot.users.find { | u | u[ 0 ] == a }[ 1 ].avatar_id
+			e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u }.jpg?size=512"
 		end
 	  end
 	end
