@@ -42,45 +42,44 @@ module DiscordBot
 			resp = r[ :wall ][ 1 ]
 
 			if @config[ 'groups' ][ g ] == resp[ :id ] then
-				puts "Данная тема уже была опубликована в канале. Возвращаемся..."
 				return true
 			end
 
-			message = "#{ r[ :groups ][ 0 ][ :name ] }:\nСсылка на пост: http://vk.com/wall#{ g }_#{ resp[ :id ] }\n"
+			message = "="*80 + "\n#{ r[ :groups ][ 0 ][ :name ] } [ http://vk.com/wall#{ g }_#{ resp[ :id ] } ]\n"
 			attach = resp[ :attachments ][ 0 ]
 
-			if resp[ :text ] != "" then message = message + "#{ resp[ :text ] }\n" end
+			if resp[ :text ] != "" then message = message + "#{ resp[ :text ].gsub( "<br>", "\n" ).gsub( /#[^\s]+([\s\n]*)?/, "" ) }\n" end
 
 			case attach[ :type ]
 			when "photo"
 				p = attach[ :photo ]
 
-				image = "Изображение: #{ p[ :src_big ] }\n"
+				image = "-#- Изображение: #{ p[ :src_big ] }\n"
 				text = ""
 
-				if p[ :text ] != '' then
-					text = "Комментарий к изображению: #{ p[ :text ] }\n"
+				if p[ :text ] != '' then 
+					text = "-#- Комментарий к изображению: #{ p[ :text ].gsub( /https?:[^\s]+/, "-ссылка удалена-" ) }\n"
 				end
 
 				message = message + text + image
 			when "video"
 				p = attach[ :video ]
 
-				url = "Видео: http://vk.com/video#{ g }_#{ p[ :id ] }\n"
-				title = "Название: #{ p[ :title ] }\n"
+				url = "-#- Видео: http://vk.com/video#{ g }_#{ p[ :id ] }\n"
+				title = "-#- Название: #{ p[ :title ] }\n"
 				img = p[ :image_big ]
 
 				message = message + title + url
 			when "doc"
 				p = attach[ :doc ]
 
-				title = "Название: #{ p[ :title ] }\n"
-				url = "Ссылка: #{ p[ :url ] }\n"
+				title = "-#- Название: #{ p[ :title ] }\n"
+				url = "-#- Ссылка: #{ p[ :url ] }\n"
 
 				message = message + title + url
 			end
 
-			@bot.send_message( @channels[ 'news' ], message )
+			@bot.send_message( @channels[ 'news' ], message + "="*80 )
 
 			@config[ 'groups' ][ g ] = resp[ :id ]
 			@client.save_config
