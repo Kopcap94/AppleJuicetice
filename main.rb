@@ -2,12 +2,14 @@ require 'discordrb'
 require 'json'
 require_relative './commands'
 require_relative './vk'
+require_relative './wiki'
 
 module DiscordBot
 	class Discord
 		include Discordrb
 		include Commands
 		include VK
+		include Wiki
 
 		attr_accessor :bot, :channels, :config
 
@@ -23,6 +25,7 @@ module DiscordBot
 
 			@vk = VK::VK.new( self )
 			@com = Commands::Commands.new( self )
+			@wiki = Wiki::Wiki.new( self )
 		end
 
 		def start
@@ -32,6 +35,7 @@ module DiscordBot
 				end
 
 				@vk.start_group_gathering
+				@wiki.start_check_recent_changes
 			end
 
 			command_block
@@ -44,12 +48,13 @@ module DiscordBot
 		end
 
 		def command_block
-			@bot.member_join 		do | e | 	@com.new_user_join( e )	end
-			@bot.member_leave		do | e | 	@com.user_left( e ) 	end
-			@bot.mention 			do | e | 	@com.mentioned( e ) 	end
-			@bot.command :help 		do | e | 	@com.help( e ) 			end
-			@bot.command :add_group do | e, g | @com.add_group( e, g )	end
-			@bot.command :avatar	do | e, u | @com.avatar( e, u )		end
+			@bot.member_join		do | e | 	@com.new_user_join( e )		end
+			@bot.member_leave		do | e | 	@com.user_left( e ) 		end
+			@bot.mention			do | e | 	@com.mentioned( e ) 		end
+			@bot.command :help		do | e | 	@com.help( e ) 				end
+			@bot.command :add_group	do | e, g | @com.add_group( e, g )		end
+			@bot.command :avatar	do | e, u | @com.avatar( e, u )			end
+			@bot.command :uploads	do | e |	@com.switch_uploads( e )	end
 		end
 	end
 end

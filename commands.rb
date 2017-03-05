@@ -54,6 +54,13 @@ module DiscordBot
 			u = @bot.users.find { | u | u[ 0 ] == a }[ 1 ].avatar_id
 			e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u }.jpg?size=512"
 		end
+
+		def switch_uploads( e )
+			@config[ 'show_uploads' ] = !@config[ 'show_uploads' ]
+			@client.save_config
+
+			e.respond "Отображение логов о загрузке изображений: #{ @config[ 'show_uploads' ] ? "включено" : "выключено" }."
+		end
 	  end
 	end
 end
