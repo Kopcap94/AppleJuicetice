@@ -51,10 +51,10 @@ module DiscordBot
 			@bot.member_join		do | e | 	@com.new_user_join( e )		end
 			@bot.member_leave		do | e | 	@com.user_left( e ) 		end
 			@bot.mention			do | e | 	@com.mentioned( e ) 		end
-			@bot.command :help		do | e | 	@com.help( e ) 				end
-			@bot.command :add_group	do | e, g | @com.add_group( e, g )		end
-			@bot.command :avatar	do | e, u | @com.avatar( e, u )			end
-			@bot.command :uploads	do | e |	@com.switch_uploads( e )	end
+			@bot.command :help		do | e | 	@com.help( e ) 			end
+			@bot.command :add_group		do | e, g |	@com.add_group( e, g )		end
+			@bot.command :avatar		do | e, u | 	@com.avatar( e, u )		end
+			@bot.command :uploads		do | e |	@com.switch_uploads( e )	end
 		end
 	end
 end
