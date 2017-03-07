@@ -4,6 +4,11 @@
   "prefix": "!",
   "rcid": 0,
   "show_uploads": true,
+  "rc_refresh": 30,
+  "vk_refresh": 300,
   "groups": {
+    "-41670861": 0,
+    "-38512429": 0,
+    "-67186869": 0
   }
 }

@@ -31,6 +31,7 @@ module DiscordBot
 		def start
 			@bot.ready do |e|
 				@bot.servers.each do |k, v|
+					v.roles.each {| arr, i | @bot.set_role_permission( arr.id, [ 'Администратор', 'Модератор' ].index( arr.name ).nil? ? 1 : 2 ) }
 					v.channels.each {| arr | @channels[ arr.name ] = arr.id }
 				end
 
@@ -39,6 +40,7 @@ module DiscordBot
 			end
 
 			command_block
+			permissions_block
 
 			@bot.run
 		end
@@ -47,14 +49,23 @@ module DiscordBot
 			File.open( 'cfg.json', 'w+' ) {|f| f.write( JSON.pretty_generate( @config ) ) }
 		end
 
+		def events_block
+			@bot.member_join  do | e | @com.new_user_join( e ) end
+			@bot.member_leave do | e | @com.user_left( e )     end
+			@bot.mention      do | e | @com.mentioned( e )     end
+		end
+
 		def command_block
-			@bot.member_join		do | e | 	@com.new_user_join( e )		end
-			@bot.member_leave		do | e | 	@com.user_left( e ) 		end
-			@bot.mention			do | e | 	@com.mentioned( e ) 		end
-			@bot.command :help		do | e | 	@com.help( e ) 			end
-			@bot.command :add_group		do | e, g |	@com.add_group( e, g )		end
-			@bot.command :avatar		do | e, u | 	@com.avatar( e, u )		end
-			@bot.command :uploads		do | e |	@com.switch_uploads( e )	end
+			@bot.command :help    do | e |    @com.help( e )           end
+			@bot.command :avatar  do | e, u | @com.avatar( e, u )      end
+			@bot.command :info    do | e |    @com.bot_info( e )       end
+		end
+
+		def permissions_block
+			@bot.command( :uploads,   permission_level: 2 ) do | e |       @com.switch_uploads( e ) end
+			@bot.command( :add_group, permission_level: 2 ) do | e, g |    @com.add_group( e, g )   end
+			@bot.command( :nuke,      permission_level: 2 ) do | e, i |    @com.nuke( e, i )        end
+			@bot.command( :set_time,  permission_level: 2 ) do | e, t, i | @com.set_time( e, t, i ) end
 		end
 	end
 end

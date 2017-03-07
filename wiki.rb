@@ -15,9 +15,13 @@ module DiscordBot
 
 		def start_check_recent_changes
 			Thread.new {
-				get_data_from_api
+				begin
+					get_data_from_api
+				rescue => err
+					puts err
+				end
 
-				sleep 60
+				sleep @config[ 'rc_refresh' ]
 				start_check_recent_changes
 			}
 		end
@@ -52,6 +56,11 @@ module DiscordBot
 					next
 				end
 
+				emb = Discordrb::Webhooks::Embed.new
+
+				emb.color = "#507299"
+				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+	
 				case obj[ :type ]
 				when "log"
 					type = "Лог :pencil:"
@@ -62,20 +71,18 @@ module DiscordBot
 				else
 					type = "Неизвестный тип изменения :heavy_multiplication_x:"
 				end
+				emb.title = type
+				emb.description = "http://ru.mlp.wikia.com/index.php?diff=#{ obj[ :revid ] }"
 
-				url = "http://ru.mlp.wikia.com/index.php?diff=#{ obj[ :revid ] }"
-				message = 	"="*80 + 
-							"\n**Тип правки:** #{ type }\n" +
-							"**Участник:** #{ obj[ :user ] }\n" +
-							"**Страница:** #{ obj[ :title ] } [ http://ru.mlp.wikia.com/wiki/#{ obj[ :title ].split( "\s" ).join( "_" ) } ]\n"
+				emb.add_field( name: "Участник", value: obj[ :user ], inline: true )
+				emb.add_field( name: "Страница", value: obj[ :title ], inline: true )
 
 				if obj[ :ns ] != 6 then
-					message = message + 
-								"**Описание правки:** #{ obj[ :comment ] }\n" +
-								"**Изменения:** #{ obj[ :newlen ] - obj[ :oldlen ] } байт(а|ов) [ http://ru.mlp.wikia.com/index.php?diff=#{ obj[ :revid ] } ]\n"
+					emb.add_field( name: "Изменения:", value: "#{ obj[ :newlen ] - obj[ :oldlen ] } байт", inline: true )
+					emb.add_field( name: "Описание правки", value: "@ #{ obj[ :comment ] }" )
 				end
 
-				@bot.send_message( @channels[ 'recentchanges' ], message + "="*80 )
+				@bot.send_message( @channels[ 'recentchanges' ], '', false, emb )
 				sleep 1
 			end
 

@@ -61,6 +61,50 @@ module DiscordBot
 
 			e.respond "Отображение логов о загрузке изображений: #{ @config[ 'show_uploads' ] ? "включено" : "выключено" }."
 		end
+
+		def nuke( e, a )
+			a = a.gsub( /[^0-9]/, '' ).to_i
+			if a.nil? or a == '' then
+				a = 2
+			end
+
+			e.channel.prune( a )
+			e.respond "<@#{ e.user.id }>, чистка #{ a } сообщений выполнена."
+		end
+
+		def set_time( e, t, i )
+			if [ "vk", "rc" ].index( t ).nil? then
+				e.respond "<@#{ e.user.id }>, доступные варианты для изменения задержки между запросами - vk и rc [ запросы ВК, запросы к свежим правкам ]. Пример команды !set_time vk 10."
+				return
+			elsif i.nil? then
+				e.respond "<@#{ e.user.id }>, вы не указали время [в секундах] между запросами. Пример команды !set_time vk 10."
+				return
+			end
+
+			num = i.gsub( /[^0-9]/, '' ).to_i
+			if num == "" then num = 60 end
+
+			@config[ t + "_refresh" ] = num
+			@client.save_config
+
+			e.respond "<@#{ e.user.id }>, запросы к #{ t } будут повторяться каждые #{ num } секунд."
+		end
+
+		def bot_info( e )
+			e.channel.send_embed do | emb |
+				emb.color = "#4A804C"
+
+				emb.title = "Я - Яблочное Сокосудие!"
+				emb.description = "Это бот, написанный на языке программирования Ruby. Основной фрейм для работы с Discord-ом - гем discordrb. Дополнительные гемы - HTTParty и JSON."
+
+				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+				emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images4.wikia.nocookie.net/siegenax/ru/images/5/5e/FA_Princess_Luna_Pirate2.png' )
+
+				emb.add_field( name: "Исходный код бота", value: "https://github.com/Kopcap94/Discord-AJ" )
+
+				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.1", icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+			end
+		end
 	  end
 	end
 end
