@@ -59,8 +59,7 @@ module DiscordBot
 				emb = Discordrb::Webhooks::Embed.new
 
 				emb.color = "#507299"
-				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
-	
+
 				case obj[ :type ]
 				when "log"
 					type = "Лог :pencil:"

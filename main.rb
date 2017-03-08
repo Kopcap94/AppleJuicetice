@@ -39,6 +39,7 @@ module DiscordBot
 				@wiki.start_check_recent_changes
 			end
 
+			events_block
 			command_block
 			permissions_block
 
@@ -56,16 +57,57 @@ module DiscordBot
 		end
 
 		def command_block
-			@bot.command :help    do | e |    @com.help( e )           end
-			@bot.command :avatar  do | e, u | @com.avatar( e, u )      end
-			@bot.command :info    do | e |    @com.bot_info( e )       end
+			@bot.command( 
+				:help,
+				description: "Выводит справку о командах бота в ЛС участника.",
+				usage: "Не требует параметров." 
+			) do | e | @com.help( e ) end
+
+			@bot.command(
+				:info,
+				description: "Выводит информацию о боте.",
+				usage: "Не требует параметров." 
+			) do | e | @com.bot_info( e ) end
+
+			@bot.command(
+				:avatar,
+				min_args: 1,
+				description: "Выводит ссылку на аватар участника.",
+				usage: "Требуется упомянуть цель: !avatar @kopcap"
+			) do | e, u | @com.avatar( e, u ) end
 		end
 
 		def permissions_block
-			@bot.command( :uploads,   permission_level: 2 ) do | e |       @com.switch_uploads( e ) end
-			@bot.command( :add_group, permission_level: 2 ) do | e, g |    @com.add_group( e, g )   end
-			@bot.command( :nuke,      permission_level: 2 ) do | e, i |    @com.nuke( e, i )        end
-			@bot.command( :set_time,  permission_level: 2 ) do | e, t, i | @com.set_time( e, t, i ) end
+			@bot.command(
+				:uploads,
+				permission_level: 2,
+				description: "Включает или выключает отображение логов загрузки в свежих правках.",
+				usage: "Не требует параметров."
+			) do | e | @com.switch_uploads( e ) end
+
+			@bot.command(
+				:add_group,
+				permission_level: 2,
+				min_args: 1,
+				description: "Добавляет ID группы VK в список патрулируемых.",
+				usage: "Требует ID группы: !add_group -2000"
+			) do | e, g | @com.add_group( e, g ) end
+
+			@bot.command(
+				:nuke,
+				permission_level: 2,
+				min_args: 1,
+				description: "Удаляет указанное кол-во сообщений. Число сообщений для удаления должно быть в диапазоне от 2 до 100.",
+				usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10"
+			) do | e, i | @com.nuke( e, i ) end
+
+			@bot.command(
+				:set_time, 
+				permission_level: 2,
+				min_args: 3,
+				description: "Устанавливает задержку между проверками свежих правок [ rc ] или групп VK [ vk ].",
+				usage: "Требует 2 параметра - тип проверки [ vk, rc ] и задержку в секундах: !set_time vk 10"
+			) do | e, t, i | @com.set_time( e, t, i ) end
 		end
 	end
 end

@@ -23,7 +23,16 @@ module DiscordBot
 		end
 
 		def help( e )
-			e.user.pm "Список команд пустует"
+			e.user.pm.send_embed do | emb |
+				emb.color = "#4A804C"
+				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'Список команд бота', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+
+				@bot.commands.each do | k, v |
+					text = "**Уровень доступа:** #{v.attributes[ :permission_level ] != 2 ? "все участники" : "модераторы и администраторы"}\n**Описание:** #{ v.attributes[ :description ] }\n**Использование:** #{ v.attributes[ :usage ] }"
+					emb.add_field( name: "#{ @bot.prefix }#{ v.name }", value: text )
+				end
+			end
+
 			e.respond "<@#{ e.user.id }>, список команд отправлен в ЛС."
 		end
 
@@ -76,9 +85,6 @@ module DiscordBot
 			if [ "vk", "rc" ].index( t ).nil? then
 				e.respond "<@#{ e.user.id }>, доступные варианты для изменения задержки между запросами - vk и rc [ запросы ВК, запросы к свежим правкам ]. Пример команды !set_time vk 10."
 				return
-			elsif i.nil? then
-				e.respond "<@#{ e.user.id }>, вы не указали время [в секундах] между запросами. Пример команды !set_time vk 10."
-				return
 			end
 
 			num = i.gsub( /[^0-9]/, '' ).to_i
@@ -94,11 +100,11 @@ module DiscordBot
 			e.channel.send_embed do | emb |
 				emb.color = "#4A804C"
 
-				emb.title = "Я - Яблочное Сокосудие!"
+				emb.title = "#{ e.user.name }, Я - Яблочное Сокосудие!"
 				emb.description = "Это бот, написанный на языке программирования Ruby. Основной фрейм для работы с Discord-ом - гем discordrb. Дополнительные гемы - HTTParty и JSON."
 
 				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
-				emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images4.wikia.nocookie.net/siegenax/ru/images/5/5e/FA_Princess_Luna_Pirate2.png' )
+				emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 
 				emb.add_field( name: "Исходный код бота", value: "https://github.com/Kopcap94/Discord-AJ" )
 

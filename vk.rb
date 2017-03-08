@@ -46,13 +46,12 @@ module DiscordBot
 			resp = r[ :wall ][ 1 ]
 
 			if @config[ 'groups' ][ g ] == resp[ :id ] then
-				return true
+				return
 			end
 
 			emb = Discordrb::Webhooks::Embed.new
 
 			emb.color = "#507299"
-			emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 			emb.title = r[ :groups ][ 0 ][ :name ]
 			emb.description = "http://vk.com/wall#{ g }_#{ resp[ :id ] }"
 			emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ r[ :groups ][ 0 ][ :photo_big ] }" )
