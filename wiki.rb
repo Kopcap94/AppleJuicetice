@@ -57,7 +57,6 @@ module DiscordBot
 				end
 
 				emb = Discordrb::Webhooks::Embed.new
-
 				emb.color = "#507299"
 
 				case obj[ :type ]
@@ -70,15 +69,19 @@ module DiscordBot
 				else
 					type = "Неизвестный тип изменения :heavy_multiplication_x:"
 				end
-				emb.title = type
-				emb.description = "http://ru.mlp.wikia.com/index.php?diff=#{ obj[ :revid ] }"
 
+				title = obj[ :title ]
+				if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "Тема на форуме или стене обсуждения" end
+
+				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "http://ru.mlp.wikia.com/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
+				emb.title = "http://ru.mlp.wikia.com/index.php?diff=#{ obj[ :revid ] }"
 				emb.add_field( name: "Участник", value: obj[ :user ], inline: true )
-				emb.add_field( name: "Страница", value: obj[ :title ], inline: true )
 
 				if obj[ :ns ] != 6 then
 					emb.add_field( name: "Изменения:", value: "#{ obj[ :newlen ] - obj[ :oldlen ] } байт", inline: true )
-					emb.add_field( name: "Описание правки", value: "@ #{ obj[ :comment ] }" )
+					if obj[ :comment ] != "" then
+						emb.add_field( name: "Описание правки", value: "#{ obj[ :comment ] }" )
+					end
 				end
 
 				@bot.send_message( @channels[ 'recentchanges' ], '', false, emb )

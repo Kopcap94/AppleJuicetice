@@ -50,13 +50,12 @@ module DiscordBot
 			end
 
 			emb = Discordrb::Webhooks::Embed.new
-
 			emb.color = "#507299"
-			emb.title = r[ :groups ][ 0 ][ :name ]
-			emb.description = "http://vk.com/wall#{ g }_#{ resp[ :id ] }"
+			emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: r[ :groups ][ 0 ][ :name ], url: "http://vk.com/#{ r[ :groups ][ 0 ][ :screen_name ] }" )
+			emb.title = "http://vk.com/wall#{ g }_#{ resp[ :id ] }"
 			emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ r[ :groups ][ 0 ][ :photo_big ] }" )
 
-			text = resp[ :text ].gsub( "<br>", "\n" ).gsub( /#[^\s]+([\s\n]*)?/, "" )
+			text = resp[ :text ].gsub( "<br>", "\n" ).gsub( /(#[^\s]+([\s\n]*)?|\|\s*)/, "" )
 			if text != "" then 
 				emb.add_field( name: "Текст поста:", value: text )
 			end

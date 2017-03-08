@@ -60,8 +60,12 @@ module DiscordBot
 			end
 
 			a = a.gsub( /[^\d]+/, "" ).to_i
-			u = @bot.users.find { | u | u[ 0 ] == a }[ 1 ].avatar_id
-			e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u }.jpg?size=512"
+			u = @bot.users.find { | u | u[ 0 ] == a }
+			if u.nil? then
+				e.respond "<@#{ e.user.id }>, такого участника нет на сервере."
+				return
+			end
+			e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u[ 1 ].avatar_id }.jpg?size=512"
 		end
 
 		def switch_uploads( e )
