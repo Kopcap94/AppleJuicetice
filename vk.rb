@@ -30,6 +30,7 @@ module DiscordBot
 				begin
 					get_data_from_group( t )
 				rescue => err
+					puts t
 					puts err
 				end
 			}
@@ -57,6 +58,7 @@ module DiscordBot
 
 			text = resp[ :text ].gsub( "<br>", "\n" ).gsub( /(#[^\s]+([\s\n]*)?|\|\s*)/, "" )
 			if text != "" then 
+				if text.length > 100 then text = text[0..100] end
 				emb.add_field( name: "Текст поста:", value: text )
 			end
 
@@ -73,7 +75,7 @@ module DiscordBot
 				when "video"
 					p = attach[ :video ]
 
-					emb.add_field( name: "Видео", value: "http://vk.com/video#{ g }_#{ p[ :id ] }" )
+					emb.add_field( name: "Видео", value: "http://vk.com/video#{ g }_#{ p[ :vid ] }" )
 					emb.add_field( name: "Название", value: p[ :title ] )
 					emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ :image_big ] ) 
 				when "doc"

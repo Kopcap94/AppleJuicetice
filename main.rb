@@ -3,6 +3,7 @@ require 'json'
 require_relative './commands'
 require_relative './vk'
 require_relative './wiki'
+require_relative './games'
 
 module DiscordBot
 	class Discord
@@ -10,6 +11,7 @@ module DiscordBot
 		include Commands
 		include VK
 		include Wiki
+		include Games
 
 		attr_accessor :bot, :channels, :config
 
@@ -26,6 +28,7 @@ module DiscordBot
 			@vk = VK::VK.new( self )
 			@com = Commands::Commands.new( self )
 			@wiki = Wiki::Wiki.new( self )
+			@games = Games::Games.new( self )
 		end
 
 		def start
@@ -39,6 +42,7 @@ module DiscordBot
 				@wiki.start_check_recent_changes
 			end
 
+			games_block
 			events_block
 			command_block
 			permissions_block
@@ -51,9 +55,18 @@ module DiscordBot
 		end
 
 		def events_block
-			@bot.member_join  do | e | @com.new_user_join( e ) end
-			@bot.member_leave do | e | @com.user_left( e )     end
-			@bot.mention      do | e | @com.mentioned( e )     end
+			@bot.member_join  do | e |
+				g = e.server.roles.find { |r| r.name == "Новички" }
+				e.user.add_role( g )
+				e.server.general_channel.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
+			end
+
+			@bot.member_leave do | e |
+				e.server.general_channel.send_message "#{ e.user.name } покинул сервер."
+			end
+			@bot.mention do | e | 
+				e.respond "<@#{ e.user.id }>, если вам требуется список команд, используйте команду !help."
+			end
 		end
 
 		def command_block
@@ -75,6 +88,48 @@ module DiscordBot
 				description: "Выводит ссылку на аватар участника.",
 				usage: "Требуется упомянуть цель: !avatar @kopcap"
 			) do | e, u | @com.avatar( e, u ) end
+
+			@bot.command(
+				:user,
+				min_args: 1,
+				description: "Выводит информация об участнике на Фэндоме.",
+				usage: "Требуется указать ник участника: !user Kopcap94"
+			) do | e, *args | @com.wiki_user( e, args.join( " " ) ) end
+		end
+
+		def games_block
+			@bot.command(
+				:mafia,
+				min_args: 1,
+				description: "Взаимодействие с игрой Мафия.",
+				usage: "Требуется указать значение on/off: !mafia on"
+			) do | e, s | @games.mafia( e, s ) end
+
+			@bot.command(
+				:mafia_join,
+				description: "Присоединиться к игре, оставив заявку на участие.",
+				usage: "!mafia_join"
+			) do | e | @games.mafia_join( e ) end
+
+			@bot.command(
+				:mafia_leave,
+				description: "Отменить заявку на участие в игре.",
+				usage: "!mafia_leave"
+			) do | e | @games.mafia_leave( e ) end
+
+			@bot.command(
+				:mafia_vote,
+				min_args: 1,
+				description: "Команда для голосования жителей.",
+				usage: "Требуется упомянуть игрока: !mafia_vote @kopcap94"
+			) do | e, v | @games.mafia_vote( e, v ) end
+
+			@bot.command(
+				:mafia_kill,
+				min_args: 1,
+				description: "Команда для голосования мафии.",
+				usage: "Требуется упомянуть игрока: !mafia_kill @kopcap94"
+			) do | e, v | @games.mafia_kill( e, v ) end
 		end
 
 		def permissions_block

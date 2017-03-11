@@ -8,20 +8,6 @@ module DiscordBot
 			@config = client.config
 		end
 
-		def new_user_join( e )
-			g = e.server.roles.find { |r| r.name == "Новички" }
-			e.user.add_role( g )
-			e.server.general_channel.send_message "Добро пожаловать на сервер, <@#{e.user.id}>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
-		end
-
-		def user_left( e )
-			e.server.general_channel.send_message "<@#{e.user.id}> покинул сервер."
-		end
-
-		def mentioned( e )
-			e.respond "<@#{ e.user.id }>, если вам требуется список команд, используйте команду !help."
-		end
-
 		def help( e )
 			e.user.pm.send_embed do | emb |
 				emb.color = "#4A804C"
@@ -68,6 +54,28 @@ module DiscordBot
 			e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u[ 1 ].avatar_id }.jpg?size=512"
 		end
 
+		def wiki_user( e, u )
+			us = JSON.parse(
+				HTTParty.get(
+					URI.encode( "http://community.wikia.com/api.php?action=query&format=json&list=users&usprop=registration|editcount&ususers=#{ u }" ),
+					:verify => false
+				).body,
+				:symbolize_names => true
+			)[ :query ][ :users ][0]
+			
+			if !us[ :missing ].nil? then
+				e.respond "Участника #{ u } не существует."
+				return
+			end
+
+			e.channel.send_embed do | emb |
+				emb.color = "#4A804C"
+				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "#{ u } [ ID: #{ us[ :userid ] } ]", url: "http://community.wikia.com/wiki/User:#{ u.gsub( /\s/, "_" ) }" )
+				emb.add_field( name: "Регистрация", value: "#{ us[:registration].nil? ? "отключён" : us[ :registration ].gsub( /[TZ]/, " " ) }", inline: true )
+				emb.add_field( name: "Кол-во правок", value: us[ :editcount ], inline: true )
+			end
+		end
+
 		def switch_uploads( e )
 			@config[ 'show_uploads' ] = !@config[ 'show_uploads' ]
 			@client.save_config
@@ -77,8 +85,10 @@ module DiscordBot
 
 		def nuke( e, a )
 			a = a.gsub( /[^0-9]/, '' ).to_i
-			if a.nil? or a == '' then
+			if a.nil? or a == '' or a == 1 then
 				a = 2
+			elsif a > 100 then
+				a = 100
 			end
 
 			e.channel.prune( a )
