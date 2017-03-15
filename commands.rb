@@ -23,6 +23,7 @@ module DiscordBot
 		end
 
 		def add_group( e, g )
+			puts e.server.id
 			if g !~ /^-?\d+$/ then
 				e.respond "Неправильно указан ID группы. Пример: -223994."
 				return

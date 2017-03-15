@@ -224,22 +224,20 @@ module DiscordBot
 				@mafia_roles[ :second ].delete( u )
 			when 'day'
 				if @mafia_roles[ :second ].include?( u ) then
-					k = "Мирный житель"
+					k = "мирным жителем"
 					@mafia_roles[ :second ].delete( u )
 				else
-					k = "Мафия"
+					k = "мафией"
 					@mafia_roles[ :main ].delete( u )
 				end
 
-				@bot.send_message( @channels[ 'mafia' ], "Жители приняли решение убить <@#{ u }>. После вынесения приговора и убийство выяснилось, что он был #{ k }." )
+				@bot.send_message( @channels[ 'mafia' ], "Жители приняли решение убить <@#{ u }>. После вынесения приговора и убийства выяснилось, что он был **#{ k }**." )
 			end
 
 			m = @mafia_roles[ :main ].count
 			s = @mafia_roles[ :second ].count
 
-			if 
-				( m == 1 and s == 1 ) or ( m == 2 and s < 3 )
-			then
+			if ( m == 1 and s == 1 ) or ( m == 2 and s < 3 ) then
 				@mafia_game_state = false
 				@mafia_is_running = false
 
