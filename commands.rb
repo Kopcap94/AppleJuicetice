@@ -99,21 +99,6 @@ module DiscordBot
 			e.respond "<@#{ e.user.id }>, чистка #{ a } сообщений выполнена."
 		end
 
-		def set_time( e, t, i )
-			if [ "vk", "rc" ].index( t ).nil? then
-				e.respond "<@#{ e.user.id }>, доступные варианты для изменения задержки между запросами - vk и rc [ запросы ВК, запросы к свежим правкам ]. Пример команды !set_time vk 10."
-				return
-			end
-
-			num = i.gsub( /[^0-9]/, '' ).to_i
-			if num == "" then num = 60 end
-
-			@config[ t + "_refresh" ] = num
-			@client.save_config
-
-			e.respond "<@#{ e.user.id }>, запросы к #{ t } будут повторяться каждые #{ num } секунд."
-		end
-
 		def bot_info( e )
 			e.channel.send_embed do | emb |
 				emb.color = "#4A804C"

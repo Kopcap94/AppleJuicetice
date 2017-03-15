@@ -23,12 +23,11 @@ module DiscordBot
 		end
 
 		def start_check_recent_changes
-			@config[ 'wikies' ].each do | w, r |
-				init_cheсking( w, r )
-			end
-
-			sleep 30
-			start_check_recent_changes
+			Thread.new {
+				@config[ 'wikies' ].each do | w, r |
+					init_cheсking( w, r )
+				end
+			}
 		end
 		
 		def init_cheсking( w, d )
@@ -38,6 +37,9 @@ module DiscordBot
 				rescue => err
 					puts "#{ err }: #{ err.backtrace }"
 				end
+
+				sleep 60
+				init_cheсking( w, d )
 			}
 		end
 

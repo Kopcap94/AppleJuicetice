@@ -27,11 +27,7 @@ module DiscordBot
 			Thread.new {
 				@config[ 'groups' ].each do |k, v|
 					do_new_thread( k, v )
-					sleep 5
 				end
-
-				sleep 150
-				start_group_gathering
 			}
 		end
 
@@ -42,6 +38,9 @@ module DiscordBot
 				rescue => err
 					puts "#{ err } at #{ t }: #{ err.backtrace }"
 				end
+
+				sleep 300
+				do_new_thread( t, d )
 			}
 		end
 

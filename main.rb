@@ -59,10 +59,21 @@ module DiscordBot
 				e.respond "<@#{ e.user.id }>, если вам требуется список команд, используйте команду !help."
 			end
 
+			@bot.command :eval do | e, *c |
+				break unless e.user.id == @config[ 'owner' ]
+
+				begin
+					eval c.join(' ')
+				rescue
+					'Ошибка в коде'
+				end
+			end
+
 			@games.commands
 			@vk.commands
 			@com.commands
 			@wiki.commands
+			permissions_block
 
 			@bot.run
 		end
