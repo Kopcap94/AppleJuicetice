@@ -8,6 +8,34 @@ module DiscordBot
 			@config = client.config
 		end
 
+		def commands
+			@bot.command( 
+				:help,
+				description: "Выводит справку о командах бота в ЛС участника.",
+				usage: "Не требует параметров." 
+			) do | e | help( e ) end
+
+			@bot.command(
+				:info,
+				description: "Выводит информацию о боте.",
+				usage: "Не требует параметров." 
+			) do | e | bot_info( e ) end
+
+			@bot.command(
+				:avatar,
+				min_args: 1,
+				description: "Выводит ссылку на аватар участника.",
+				usage: "Требуется упомянуть цель: !avatar @kopcap"
+			) do | e, u | avatar( e, u ) end
+
+			@bot.command(
+				:user,
+				min_args: 1,
+				description: "Выводит информация об участнике на Фэндоме.",
+				usage: "Требуется указать ник участника: !user Kopcap94"
+			) do | e, *args | wiki_user( e, args.join( " " ) ) end
+		end
+
 		def help( e )
 			e.user.pm.send_embed do | emb |
 				emb.color = "#4A804C"
@@ -20,24 +48,6 @@ module DiscordBot
 			end
 
 			e.respond "<@#{ e.user.id }>, список команд отправлен в ЛС."
-		end
-
-		def add_group( e, g )
-			puts e.server.id
-			if g !~ /^-?\d+$/ then
-				e.respond "Неправильно указан ID группы. Пример: -223994."
-				return
-			end
-
-			if g.index( "-" ).nil? then
-				e.respond "В самом начале ID группы пропущен '-'. Пожалуйста, не забудьте его в следующий раз."
-				g = "-" + g
-			end
-
-			@config[ 'groups' ][ g ] = ""
-			@client.save_config
-
-			e.respond "<@#{ e.user.id }>, ID группы #{ g } добавлен в список групп для новостей."
 		end
 
 		def avatar( e, a )
@@ -75,13 +85,6 @@ module DiscordBot
 				emb.add_field( name: "Регистрация", value: "#{ us[:registration].nil? ? "отключён" : us[ :registration ].gsub( /[TZ]/, " " ) }", inline: true )
 				emb.add_field( name: "Кол-во правок", value: us[ :editcount ], inline: true )
 			end
-		end
-
-		def switch_uploads( e )
-			@config[ 'show_uploads' ] = !@config[ 'show_uploads' ]
-			@client.save_config
-
-			e.respond "Отображение логов о загрузке изображений: #{ @config[ 'show_uploads' ] ? "включено" : "выключено" }."
 		end
 
 		def nuke( e, a )

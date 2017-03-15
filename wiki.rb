@@ -13,34 +13,49 @@ module DiscordBot
 			@config = client.config
 		end
 
+		def commands
+			@bot.command(
+				:uploads,
+				permission_level: 2,
+				description: "Включает или выключает отображение логов загрузки в свежих правках.",
+				usage: "Не требует параметров."
+			) do | e | switch_uploads( e ) end
+		end
+
 		def start_check_recent_changes
+			@config[ 'wikies' ].each do | w, r |
+				init_cheсking( w, r )
+			end
+
+			sleep 30
+			start_check_recent_changes
+		end
+		
+		def init_cheсking( w, d )
 			Thread.new {
 				begin
-					get_data_from_api
+					get_data_from_api( w, d )
 				rescue => err
-					puts err
+					puts "#{ err }: #{ err.backtrace }"
 				end
-
-				sleep @config[ 'rc_refresh' ]
-				start_check_recent_changes
 			}
 		end
 
-		def get_data_from_api
+		def get_data_from_api( w, data )
 			d =  JSON.parse(
 				HTTParty.get(
-					"http://ru.mlp.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes&format=json",
+					"http://#{ w }.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes&format=json",
 					:verify => false
 				).body,
 				:symbolize_names => true
 			)[ :query ][ :recentchanges ]
 
-			rcid = @config[ 'rcid' ]
+			rcid = data
 			show_uploads = @config[ 'show_uploads' ]
 			last_rcid = d[ 0 ][ :rcid ]
 
 			if rcid == 0 then
-				@config[ 'rcid' ] = last_rcid
+				@config[ 'wikies' ][ w ] = last_rcid
 				@client.save_config
 				return
 			end
@@ -84,12 +99,19 @@ module DiscordBot
 					end
 				end
 
-				@bot.send_message( @channels[ 'recentchanges' ], '', false, emb )
+				@bot.send_message( @channels[ 285482504817868800 ][ 'recentchanges' ], '', false, emb )
 				sleep 1
 			end
 
-			@config[ 'rcid' ] = last_rcid
+			@config[ 'wikies' ][ w ] = last_rcid
 			@client.save_config
+		end
+
+		def switch_uploads( e )
+			@config[ 'show_uploads' ] = !@config[ 'show_uploads' ]
+			@client.save_config
+
+			e.respond "Отображение логов о загрузке изображений: #{ @config[ 'show_uploads' ] ? "включено" : "выключено" }."
 		end
 	  end
 	end

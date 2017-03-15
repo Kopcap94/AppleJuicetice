@@ -13,30 +13,39 @@ module DiscordBot
 			@config = client.config
 		end
 
+		def commands
+			@bot.command(
+				:add_group,
+				permission_level: 2,
+				min_args: 1,
+				description: "Добавляет ID группы VK в список патрулируемых.",
+				usage: "Требует ID группы: !add_group -2000"
+			) do | e, g | add_group( e, g ) end
+		end
+
 		def start_group_gathering
 			Thread.new {
 				@config[ 'groups' ].each do |k, v|
-					do_new_thread( k )
+					do_new_thread( k, v )
 					sleep 5
 				end
 
-				sleep @config[ 'vk_refresh' ]
+				sleep 150
 				start_group_gathering
 			}
 		end
 
-		def do_new_thread( t )
+		def do_new_thread( t, d )
 			Thread.new {
 				begin
-					get_data_from_group( t )
+					get_data_from_group( t, d )
 				rescue => err
-					puts t
-					puts err
+					puts "#{ err } at #{ t }: #{ err.backtrace }"
 				end
 			}
 		end
 
-		def get_data_from_group( g )
+		def get_data_from_group( g, d )
 			r =  JSON.parse(
 				HTTParty.get(
 					"https://api.vk.com/method/wall.get?owner_id=#{ g }&count=1&offset=1&extended=1",
@@ -44,9 +53,13 @@ module DiscordBot
 				).body,
 				:symbolize_names => true
 			)[ :response ]
+
+			if r.nil? then
+				return
+			end
 			resp = r[ :wall ][ 1 ]
 
-			if @config[ 'groups' ][ g ] == resp[ :id ] then
+			if d[ 'id' ] == resp[ :id ] then
 				return
 			end
 
@@ -86,10 +99,33 @@ module DiscordBot
 				end
 			end
 
-			@bot.send_message( @channels[ 'news' ], '', false, emb )
+			d[ 'servers' ].each do | serv | 
+				@bot.send_message( @channels[ serv ][ 'news' ], '', false, emb )
+			end
 
-			@config[ 'groups' ][ g ] = resp[ :id ]
+			@config[ 'groups' ][ g ][ 'id' ] = resp[ :id ]
 			@client.save_config
+		end
+
+		def add_group( e, g )
+			if g !~ /^-?\d+$/ then
+				e.respond "Неправильно указан ID группы. Пример: -223994."
+				return
+			end
+
+			if g.index( "-" ).nil? then
+				e.respond "В самом начале ID группы пропущен '-'. Пожалуйста, не забудьте его в следующий раз."
+				g = "-" + g
+			end
+
+			if @config[ 'groups' ][ g.to_s ].nil? then
+				@config[ 'groups' ][ g.to_s ] = { 'id' => "", 'servers' => [] }
+			end
+
+			@config[ 'groups' ][ g.to_s ][ 'servers' ].push( e.server.id )
+			@client.save_config
+
+			e.respond "<@#{ e.user.id }>, ID группы #{ g } добавлен в список групп для новостей."
 		end
 	  end
 	end
