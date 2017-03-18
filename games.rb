@@ -1,3 +1,5 @@
+require 'discordrb'
+
 module DiscordBot
 	class Games
 		def initialize( client )
@@ -48,7 +50,7 @@ module DiscordBot
 				min_args: 2,
 				description: "Команда для голосования мафии.",
 				usage: "Требуется указать ID сервера и игрока: !mafia_kill <id сервера> <id игрок>. Пример: !mafia_kil 23232323 3332323."
-			) do | e, v | mafia_kill( e, v ) end
+			) do | e, v | mafia_kill( e, s, v ) end
 		end
 
 		def mafia( e, state )
@@ -164,6 +166,7 @@ module DiscordBot
 
 		def mafia_day_thread( id )
 			Thread.new {
+				disable_chat( id, false )
 				@mafia[ id ][ 'sec_vote' ] = {}
 				u = [ [], 0 ]
 
@@ -186,13 +189,14 @@ module DiscordBot
 					@bot.send_message( @channels[ id ][ 'mafia' ], "Короткий жребий достался <@#{ u[ 0 ][ 0 ] }>. Увы, но для него это конец." )
 				end
 
-				kill( u[ 0 ][ 0 ], 'day' )
+				kill( u[ 0 ][ 0 ], 'day', id )
 				if @mafia[ id ][ 'running' ] then mafia_night_thread( id ) end
 			}
 		end
 
 		def mafia_night_thread( id )
 			Thread.new {
+				disable_chat( id, true )
 				@bot.send_message( @channels[ id ][ 'mafia' ], "Наступает ночь. Мирные жители засыпают. Просыпается мафия. У мафии 1,5 минуты на принятие решений." )
 
 				@mafia[ id ][ 'mafia_vote' ] = []
@@ -203,7 +207,7 @@ module DiscordBot
 					list = list + "ID: #{ p } [ #{ @mafia[ id ][ 'users' ][ p ] } ]\n"
 				end
 
-				list = list + "**ID сервера: **#{ id }**.\nПредзаполненная команда: **!mafia_kill #{ id }**\n"
+				list = list + "**ID сервера: #{ id }**.\nПредзаполненная команда: **!mafia_kill #{ id }**\n"
 
 				@mafia[ id ][ 'roles' ][ :main ].each do | i |
 					m = @bot.users.find { | k, us | k == i }[ 1 ]
@@ -300,6 +304,26 @@ module DiscordBot
 
 				@bot.send_message( @channels[ id ][ 'mafia' ], "С утра местный шериф, попивая кофе у себя дома, радостно улыбнётся, прочитав заголовок о полном провале мафии в этом городе. На этот раз игра для них закончена. Но конец ли это в общем?" )
 				return
+			end
+		end
+
+		def disable_chat( id, t )
+			a = Discordrb::Permissions.new
+			d = Discordrb::Permissions.new
+
+			@bot.servers.each do | s, v |
+				if s == id then
+					r = v.roles.find { | arr | arr.name == "@everyone" }
+					c = v.channels.find { |arr| arr.name == "mafia" }
+	
+					if t then
+						d.can_send_messages = true
+					else
+						a.can_send_messages = true
+					end
+
+					c.define_overwrite( r, a, d )
+				end
 			end
 		end
 
