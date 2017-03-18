@@ -1,6 +1,5 @@
 module DiscordBot
-	module Commands
-	  class Commands
+	class Commands
 		def initialize( client )
 			@client = client
 			@bot = client.bot
@@ -10,7 +9,7 @@ module DiscordBot
 
 		def commands
 			@bot.command( 
-				:help,
+				:get_help,
 				description: "Выводит справку о командах бота в ЛС участника.",
 				usage: "Не требует параметров." 
 			) do | e | help( e ) end
@@ -34,6 +33,25 @@ module DiscordBot
 				description: "Выводит информация об участнике на Фэндоме.",
 				usage: "Требуется указать ник участника: !user Kopcap94"
 			) do | e, *args | wiki_user( e, args.join( " " ) ) end
+
+			@bot.command(
+				:eval,
+				permission_level: 2,
+				min_args: 1,
+				description: "Данная команда доступна только хозяину бота.",
+				usage: "!eval <код для выполнения>"
+			) do | e, *c | 
+				break unless e.user.id == @config[ 'owner' ]
+				code_eval( e, c.join( ' ' ) )
+			end
+
+			@bot.command(
+				:nuke,
+				permission_level: 2,
+				min_args: 1,
+				description: "Удаляет указанное кол-во сообщений. Число сообщений для удаления должно быть в диапазоне от 2 до 100.",
+				usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10"
+			) do | e, i | nuke( e, i ) end
 		end
 
 		def help( e )
@@ -114,6 +132,13 @@ module DiscordBot
 				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.1", icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 			end
 		end
-	  end
+
+		def code_eval( e, c )
+			begin
+				eval c
+			rescue => err
+				"Ошибка в коде\n: #{ err.backtrace.join( "\n" ) }"
+			end
+		end
 	end
 end

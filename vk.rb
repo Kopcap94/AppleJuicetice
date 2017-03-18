@@ -2,8 +2,7 @@ require 'httparty'
 require 'json'
 
 module DiscordBot
-	module VK
-	  class VK
+	class VK
 		include HTTParty
 
 		def initialize( client )
@@ -11,6 +10,8 @@ module DiscordBot
 			@bot = client.bot
 			@channels = client.channels
 			@config = client.config
+
+			for_init
 		end
 
 		def commands
@@ -23,10 +24,11 @@ module DiscordBot
 			) do | e, g | add_group( e, g ) end
 		end
 
-		def start_group_gathering
+		def for_init
 			Thread.new {
 				@config[ 'groups' ].each do |k, v|
 					do_new_thread( k, v )
+					sleep 20
 				end
 			}
 		end
@@ -40,7 +42,7 @@ module DiscordBot
 				end
 
 				sleep 300
-				do_new_thread( t, d )
+				do_new_thread( t, @config[ 'groups' ][ t ] )
 			}
 		end
 
@@ -126,6 +128,5 @@ module DiscordBot
 
 			e.respond "<@#{ e.user.id }>, ID группы #{ g } добавлен в список групп для новостей."
 		end
-	  end
 	end
 end

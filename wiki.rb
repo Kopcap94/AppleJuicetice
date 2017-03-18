@@ -2,8 +2,7 @@ require 'httparty'
 require 'json'
 
 module DiscordBot
-	module Wiki
-	  class Wiki
+	class Wiki
 		include HTTParty
 
 		def initialize( client )
@@ -11,6 +10,8 @@ module DiscordBot
 			@bot = client.bot
 			@channels = client.channels
 			@config = client.config
+
+			for_init
 		end
 
 		def commands
@@ -22,7 +23,7 @@ module DiscordBot
 			) do | e | switch_uploads( e ) end
 		end
 
-		def start_check_recent_changes
+		def for_init
 			Thread.new {
 				@config[ 'wikies' ].each do | w, r |
 					init_cheсking( w, r )
@@ -39,7 +40,7 @@ module DiscordBot
 				end
 
 				sleep 60
-				init_cheсking( w, d )
+				init_cheсking( w, @config[ 'wikies' ][ w ] )
 			}
 		end
 
@@ -115,6 +116,5 @@ module DiscordBot
 
 			e.respond "Отображение логов о загрузке изображений: #{ @config[ 'show_uploads' ] ? "включено" : "выключено" }."
 		end
-	  end
 	end
 end

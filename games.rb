@@ -1,15 +1,16 @@
 module DiscordBot
-	module Games
-	  class Games
+	class Games
 		def initialize( client )
 			@client = client
 			@bot = client.bot
 			@channels = client.channels
 			@config = client.config
+
 			@mafia = {}
+			for_init
 		end
 
-		def init_mafia
+		def for_init
 			@bot.servers.each do |k, v|
 				@mafia[ k ] = { 'state' => false, 'running' => false }
 			end
@@ -305,6 +306,5 @@ module DiscordBot
 		def parse( t )
 			return t.gsub( /[^0-9]/, '' ).to_i
 		end
-	  end
 	end
 end
