@@ -9,7 +9,7 @@ module DiscordBot
 
 		def commands
 			@bot.command( 
-				:get_help,
+				:help,
 				description: "Выводит справку о командах бота в ЛС участника.",
 				usage: "Не требует параметров." 
 			) do | e | help( e ) end
@@ -39,7 +39,8 @@ module DiscordBot
 				permission_level: 2,
 				min_args: 1,
 				description: "Данная команда доступна только хозяину бота.",
-				usage: "!eval <код для выполнения>"
+				usage: "!eval <код для выполнения>",
+				permission_message: "У вас недостаточно прав для выполнения данной команды."
 			) do | e, *c | 
 				break unless e.user.id == @config[ 'owner' ]
 				code_eval( e, c.join( ' ' ) )
@@ -50,7 +51,8 @@ module DiscordBot
 				permission_level: 2,
 				min_args: 1,
 				description: "Удаляет указанное кол-во сообщений. Число сообщений для удаления должно быть в диапазоне от 2 до 100.",
-				usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10"
+				usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10",
+				permission_message: "У вас недостаточно прав для выполнения данной команды."
 			) do | e, i | nuke( e, i ) end
 		end
 
@@ -129,7 +131,7 @@ module DiscordBot
 
 				emb.add_field( name: "Исходный код бота", value: "https://github.com/Kopcap94/Discord-AJ" )
 
-				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.1", icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.3a", icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 			end
 		end
 

@@ -57,13 +57,19 @@ module DiscordBot
 			id = e.server.id
 			s = @mafia[ id ][ 'state' ]
 
-			if s == true and state == "on" then
+			if @channels[ id ][ 'mafia' ].nil? then
+				e.respond "Отсутствует канал для игры в мафию. Пожалуйста, создайте канал с названием mafia, чтобы запустить игру."
+				return
+			elsif s == true and state == "on" then
 				e.respond "Мафия уже включена."
+				return
 			elsif s == false and state == "off" then
 				e.respond "Мафия на данный момент отключена. Нельзя отключить то, что уже отключено."
+				return
 			elsif s == true and state == "off" then
 				@mafia[ id ][ 'state' ] = false
 				e.respond "Игра отключена."
+				return
 			elsif s == false and state == "on" then
 				if @mafia[ id ][ 'running' ] then
 					e.respond "На данный момент идёт игра. Включить игру снова невозможно."

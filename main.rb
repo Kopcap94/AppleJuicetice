@@ -21,20 +21,37 @@ module DiscordBot
 			end
 
 			@config = JSON.parse( File.read( 'cfg.json' ) )
-			@bot = Discordrb::Commands::CommandBot.new token: @config[ 'token' ], client_id: @config[ 'id' ], prefix: @config[ 'prefix' ]
+			@bot = Discordrb::Commands::CommandBot.new token: @config[ 'token' ], client_id: @config[ 'id' ], prefix: @config[ 'prefix' ], help_command: false
 			@channels = {}
 			@cfg_mutex = Mutex.new
 		end
 
 		def start
-			@bot.ready do |e|
+			@bot.ready do | e |
+				@bot.update_status( 'Discord Ruby', '!help', nil )
+
 				@bot.servers.each do |k, v|
 					@channels[ k ] = {}
-					v.roles.each {| arr, i | @bot.set_role_permission( arr.id, [ 'Администратор', 'Модератор' ].index( arr.name ).nil? ? 1 : 2 ) }
+					v.roles.each do | arr, i |
+						perm = arr.permissions
+						@bot.set_role_permission( arr.id, ( perm.kick_members or perm.ban_members or perm.administrator or perm.manage_server ) ? 2 : 1 )
+					end
 					v.channels.each {| arr | @channels[ k ][ arr.name ] = arr.id }
 				end
 
 				register_modules
+			end
+
+			@bot.channel_create do | e |
+				if e.type == 0 then
+					@channels[ e.server ][ e.name ] = e.channel.id
+				end
+			end
+
+			@bot.channel_delete do | e |
+				if e.type == 0 then
+					@channels[ e.server.id ].delete( e.name )
+				end
 			end
 
 			@bot.member_join do | e |
@@ -48,7 +65,7 @@ module DiscordBot
 			end
 
 			@bot.mention do | e | 
-				e.respond "<@#{ e.user.id }>, если вам требуется список команд, используйте команду !get_help."
+				e.respond "<@#{ e.user.id }>, если вам требуется список команд, используйте команду !help."
 			end
 
 			@bot.run
