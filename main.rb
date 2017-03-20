@@ -43,15 +43,12 @@ module DiscordBot
 			end
 
 			@bot.channel_create do | e |
-				if e.type == 0 then
-					@channels[ e.server ][ e.name ] = e.channel.id
-				end
+				break unless !e.channel.pm?
+				@channels[ e.server.id ][ e.name ] = e.channel.id
 			end
 
 			@bot.channel_delete do | e |
-				if e.type == 0 then
-					@channels[ e.server.id ].delete( e.name )
-				end
+				@channels[ e.server.id ].delete( e.name )
 			end
 
 			@bot.member_join do | e |

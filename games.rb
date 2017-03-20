@@ -50,14 +50,17 @@ module DiscordBot
 				min_args: 2,
 				description: "Команда для голосования мафии.",
 				usage: "Требуется указать ID сервера и игрока: !mafia_kill <id сервера> <id игрок>. Пример: !mafia_kil 23232323 3332323."
-			) do | e, v | mafia_kill( e, s, v ) end
+			) do | e, s, v | mafia_kill( e, s, v ) end
 		end
 
 		def mafia( e, state )
 			id = e.server.id
 			s = @mafia[ id ][ 'state' ]
 
-			if @channels[ id ][ 'mafia' ].nil? then
+			if e.channel.pm? then
+				e.respond "Сам с собой будешь играть?"
+				return
+			elsif @channels[ id ][ 'mafia' ].nil? then
 				e.respond "Отсутствует канал для игры в мафию. Пожалуйста, создайте канал с названием mafia, чтобы запустить игру."
 				return
 			elsif s == true and state == "on" then

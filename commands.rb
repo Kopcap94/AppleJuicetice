@@ -36,7 +36,6 @@ module DiscordBot
 
 			@bot.command(
 				:eval,
-				permission_level: 2,
 				min_args: 1,
 				description: "Данная команда доступна только хозяину бота.",
 				usage: "!eval <код для выполнения>",
@@ -67,7 +66,9 @@ module DiscordBot
 				end
 			end
 
-			e.respond "<@#{ e.user.id }>, список команд отправлен в ЛС."
+			if !e.channel.pm? then
+				e.respond "<@#{ e.user.id }>, список команд отправлен в ЛС."
+			end
 		end
 
 		def avatar( e, a )
@@ -82,6 +83,7 @@ module DiscordBot
 				e.respond "<@#{ e.user.id }>, такого участника нет на сервере."
 				return
 			end
+
 			e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u[ 1 ].avatar_id }.jpg?size=512"
 		end
 
@@ -108,8 +110,10 @@ module DiscordBot
 		end
 
 		def nuke( e, a )
+			return if e.channel.pm?
+
 			a = a.gsub( /[^0-9]/, '' ).to_i
-			if a.nil? or a == '' or a == 1 then
+			if a.to_s.empty? or a == 1 then
 				a = 2
 			elsif a > 100 then
 				a = 100
@@ -139,7 +143,7 @@ module DiscordBot
 			begin
 				eval c
 			rescue => err
-				"Ошибка в коде\n: #{ err.backtrace.join( "\n" ) }"
+				"Ошибка в коде #{ err }:\n#{ err.backtrace.join( "\n" ) }"
 			end
 		end
 	end
