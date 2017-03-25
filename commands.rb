@@ -37,6 +37,7 @@ module DiscordBot
 			@bot.command(
 				:eval,
 				min_args: 1,
+				permission_level: 3,
 				description: "Данная команда доступна только хозяину бота.",
 				usage: "!eval <код для выполнения>",
 				permission_message: "У вас недостаточно прав для выполнения данной команды."
@@ -131,11 +132,11 @@ module DiscordBot
 				emb.description = "Это бот, написанный на языке программирования Ruby. Основной фрейм для работы с Discord-ом - гем discordrb. Дополнительные гемы - HTTParty и JSON."
 
 				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
-				emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+				emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images2.wikia.nocookie.net/siegenax/ru/images/8/84/1_obey-giant_1024.png' )
 
 				emb.add_field( name: "Исходный код бота", value: "https://github.com/Kopcap94/Discord-AJ" )
 
-				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.3a", icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.3a" )
 			end
 		end
 

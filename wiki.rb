@@ -21,6 +21,14 @@ module DiscordBot
 				description: "Включает или выключает отображение логов загрузки в свежих правках.",
 				usage: "Не требует параметров."
 			) do | e | switch_uploads( e ) end
+
+			@bot.command(
+				:add_wiki,
+				permission_level: 2,
+				min_args: 1,
+				description: "Добавляет вики в список патрулируемых и выводит правки в канал #recentchanges.",
+				usage: "!add_wiki ru.mlp"
+			) do | e, w | add_wiki( e, w ) end
 		end
 
 		def for_init
@@ -53,12 +61,12 @@ module DiscordBot
 				:symbolize_names => true
 			)[ :query ][ :recentchanges ]
 
-			rcid = data
+			rcid = data[ 'rcid' ]
 			show_uploads = @config[ 'show_uploads' ]
 			last_rcid = d[ 0 ][ :rcid ]
 
 			if rcid == 0 then
-				@config[ 'wikies' ][ w ] = last_rcid
+				@config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
 				@client.save_config
 				return
 			end
@@ -77,22 +85,11 @@ module DiscordBot
 				emb = Discordrb::Webhooks::Embed.new
 				emb.color = "#507299"
 
-				case obj[ :type ]
-				when "log"
-					type = "Лог :pencil:"
-				when "edit"
-					type = "Изменение страницы :pencil2:"
-				when "new"
-					type = "Новая страница :paintbrush:"
-				else
-					type = "Неизвестный тип изменения :heavy_multiplication_x:"
-				end
+				title = "[ #{ w } ] #{ obj[ :title ] }"
+				if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "[ #{ w } ] Тема на форуме или стене обсуждения" end
 
-				title = obj[ :title ]
-				if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "Тема на форуме или стене обсуждения" end
-
-				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "http://ru.mlp.wikia.com/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
-				emb.title = "http://ru.mlp.wikia.com/index.php?diff=#{ obj[ :revid ] }"
+				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "http://#{ w }.wikia.com/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
+				emb.title = "http://#{ w }.wikia.com/index.php?diff=#{ obj[ :revid ] }"
 				emb.add_field( name: "Участник", value: obj[ :user ], inline: true )
 
 				if obj[ :ns ] != 6 then
@@ -102,12 +99,41 @@ module DiscordBot
 					end
 				end
 
-				@bot.send_message( @channels[ 285482504817868800 ][ 'recentchanges' ], '', false, emb )
+				data[ 'servers' ].each do | id |
+					if @channels[ id ][ 'recentchanges' ].nil? then next; end
+					@bot.send_message( @channels[ id ][ 'recentchanges' ], '', false, emb )
+				end
 				sleep 1
 			end
 
-			@config[ 'wikies' ][ w ] = last_rcid
+			@config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
 			@client.save_config
+		end
+
+		def add_wiki( e, w )
+			id = e.server.id
+			w = w.gsub( /(http:\/\/|.wikia.com.*)/, '' )
+
+			if @channels[ id ][ 'recentchanges' ].nil? then
+				e.respond "<@#{ e.user.id }>, на сервере отсутствует канал #recentchanges, чтобы публиковать туда данные о свежих правках с вики. Пожалуйста, создайте канал и попробуйте снова."
+				return
+			end
+
+			if @config[ 'wikies' ][ w ].nil? then
+				@config[ 'wikies' ][ w ] = { 
+					'rcid' => 0,
+					'servers' => [ id ]
+				}
+			elsif @config[ 'wikies' ][ w ][ :servers ].include?( id ) then
+				e.respond "<@#{ e.user.id }>, #{ w } уже есть в списке для патрулирования на этом сервере."
+				return
+			else
+				@config[ 'wikies' ][ w ][ :servers ].push( id )
+			end
+
+			@client.save_config
+			init_cheсking( w, @config[ 'wikies' ][ w ] )
+			e.respond "<@#{ e.user.id }>, #{ w } добавлен в список для патрулирования."
 		end
 
 		def switch_uploads( e )
