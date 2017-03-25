@@ -1,7 +1,7 @@
 require 'discordrb'
 
 module DiscordBot
-	class Games
+	class Mafia
 		def initialize( client )
 			@client = client
 			@bot = client.bot

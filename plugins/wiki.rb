@@ -16,13 +16,6 @@ module DiscordBot
 
 		def commands
 			@bot.command(
-				:uploads,
-				permission_level: 2,
-				description: "Включает или выключает отображение логов загрузки в свежих правках.",
-				usage: "Не требует параметров."
-			) do | e | switch_uploads( e ) end
-
-			@bot.command(
 				:add_wiki,
 				permission_level: 2,
 				min_args: 1,
@@ -124,23 +117,16 @@ module DiscordBot
 					'rcid' => 0,
 					'servers' => [ id ]
 				}
-			elsif @config[ 'wikies' ][ w ][ :servers ].include?( id ) then
+			elsif @config[ 'wikies' ][ w ][ 'servers' ].include?( id ) then
 				e.respond "<@#{ e.user.id }>, #{ w } уже есть в списке для патрулирования на этом сервере."
 				return
 			else
-				@config[ 'wikies' ][ w ][ :servers ].push( id )
+				@config[ 'wikies' ][ w ][ 'servers' ].push( id )
 			end
 
 			@client.save_config
 			init_cheсking( w, @config[ 'wikies' ][ w ] )
 			e.respond "<@#{ e.user.id }>, #{ w } добавлен в список для патрулирования."
-		end
-
-		def switch_uploads( e )
-			@config[ 'show_uploads' ] = !@config[ 'show_uploads' ]
-			@client.save_config
-
-			e.respond "Отображение логов о загрузке изображений: #{ @config[ 'show_uploads' ] ? "включено" : "выключено" }."
 		end
 	end
 end
