@@ -136,7 +136,7 @@ module DiscordBot
 
 				emb.add_field( name: "Исходный код бота", value: "https://github.com/Kopcap94/Discord-AJ" )
 
-				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.3a" )
+				emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.4" )
 			end
 		end
 
