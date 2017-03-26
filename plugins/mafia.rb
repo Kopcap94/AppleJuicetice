@@ -54,6 +54,8 @@ module DiscordBot
 		end
 
 		def mafia( e, state )
+			if e.channel.pm? then return; end
+
 			id = e.server.id
 			s = @mafia[ id ][ 'state' ]
 
@@ -113,13 +115,18 @@ module DiscordBot
 		end
 
 		def mafia_join( e )
+			if e.channel.pm? then
+				e.respond "Вы не можете присоединиться к игре через личные сообщения. Используйте команду в чате того сервера, на котором запущена игра."
+				return
+			end
+
 			u = e.user.id
 			id = e.server.id
 
 			if @mafia[ id ][ 'state' ] == false then
 				e.user.pm "Игра \"Мафия\" отключена"
 				return
-			elsif @mafia[ id ][ 'running' ] == true then
+			elsif @mafia[ id ][ 'running' ] then
 				e.user.pm "Вы не можете присоединиться к игре, так как последняя уже запущена."
 				return
 			elsif !@mafia[ id ][ 'users' ][ u ].nil? then
@@ -132,10 +139,17 @@ module DiscordBot
 		end
 
 		def mafia_leave( e )
+			if e.channel.pm? then
+				e.respond "Вы не можете покинуть игру через личные сообщения. Используйте команду в чате того сервера, на котором запущена игра."
+				return
+			end
+
 			u = e.user.id
 			id = e.server.id
 
-			if @mafia[ id ][ 'users' ][ u ].nil? then
+			if !@mafia[ id ][ 'state' ] then
+				return
+			elsif @mafia[ id ][ 'users' ][ u ].nil? then
 				e.user.pm "Вашей заявки не было в списке участников."
 				return
 			end
@@ -243,11 +257,19 @@ module DiscordBot
 		end
 
 		def mafia_vote( e, v )
+			if e.channel.pm? then
+				e.respond "Вы не можете проголосовать в личных сообщениях. Делайте это на виду у всех участников."
+				return
+			end
+
 			v = parse( v )
 			u = e.user.id
 			id = e.server.id
 
-			if (!@mafia[ id ][ 'roles' ][ :main ].include?( u ) and !@mafia[ id ][ 'roles' ][ :second ].include?( u ) ) or !@mafia[ id ][ 'running' ] then
+			if @mafia[ id ].nil? or !@mafia[ id ][ 'running' ] then
+				e.user.pm "Игра в данный момент не запущена."
+				return
+			elsif (!@mafia[ id ][ 'roles' ][ :main ].include?( u ) and !@mafia[ id ][ 'roles' ][ :second ].include?( u ) ) then
 				return
 			elsif v.nil? or v == "" then
 				e.user.pm "Неправильно выбран участник. Попробуйте проголосовать снова."
@@ -269,7 +291,10 @@ module DiscordBot
 		def mafia_kill( e, id, v )
 			v = parse( v )
 
-			if !@mafia[ id ][ 'roles' ][ :main ].include?( e.user.id ) or !@mafia[ id ][ 'running' ] then
+			if @mafia[ id ].nil? or !@mafia[ id ][ 'running' ] then
+				e.user.pm "Неправильно указан id сервера или игра в данный момент не запущена."
+				return
+			elsif !@mafia[ id ][ 'roles' ][ :main ].include?( e.user.id ) then
 				return
 			elsif @mafia[ id ][ 'roles' ][ :main ].include?( v ) then 
 				e.respond "Вы не можете убить своего напарника. Но мне нравится эта идея."
