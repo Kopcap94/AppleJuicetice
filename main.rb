@@ -14,21 +14,28 @@ module DiscordBot
 					'prefix' => '!', 
 					'owner' => 0,
 					'wikies' => {},
-					'show_uploads' => false,
-					'groups' => {}
+					'groups' => {},
+					'ignored' => []
 				}))}
 				puts "Создан новый конфиг, заполните его."
 			end
 
 			@config = JSON.parse( File.read( 'cfg.json' ) )
-			@bot = Discordrb::Commands::CommandBot.new token: @config[ 'token' ], client_id: @config[ 'id' ], prefix: @config[ 'prefix' ], help_command: false
+			@bot = Discordrb::Commands::CommandBot.new( 
+				token: @config[ 'token' ],
+				client_id: @config[ 'id' ],
+				prefix: @config[ 'prefix' ],
+				help_command: false,
+				ignore_bots: true,
+				no_permission_message: "Недостаточно прав, чтобы выполнить действие."
+			)
 			@channels = {}
 			@cfg_mutex = Mutex.new
 		end
 
 		def start
 			@bot.ready do | e |
-				@bot.update_status( 'Discord Ruby', '!help', nil )
+				@bot.update_status( 'Discord Ruby', '!help or !get_help', nil )
 
 				@bot.servers.each do |k, v|
 					@channels[ k ] = {}
@@ -41,10 +48,11 @@ module DiscordBot
 				@bot.set_user_permission( @config[ 'owner' ], 3 )
 
 				register_modules
+				ignore_users
 			end
 
 			@bot.message do | e |
-				if e.channel.pm? then
+				if e.channel.pm? and e.user.id != @config[ 'owner' ] then
 					b = e.message.timestamp.to_s.gsub( /\s\+\d+$/, '' ) + " #{ e.user.name } [#{ e.user.id }]: "
 					File.open( 'pm.log', 'a' ) { |f| f.write( b + e.message.content.split( "\n" ).join( "\n" + b ) + "\n" ) }
 				end
@@ -110,6 +118,14 @@ module DiscordBot
 						m.commands
 					end
 				end
+			end
+		end
+
+		def ignore_users
+			return if @config.count == 0
+
+			@config[ 'ignored' ].each do | u |
+				@bot.ignore_user( u )
 			end
 		end
 

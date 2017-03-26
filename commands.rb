@@ -12,7 +12,13 @@ module DiscordBot
 				:help,
 				description: "Выводит справку о командах бота в ЛС участника.",
 				usage: "Не требует параметров." 
-			) do | e | help( e ) end
+			) do | e | help( e, true ) end
+
+			@bot.command( 
+				:get_help,
+				description: "Выводит справку о командах бота в чат.",
+				usage: "Не требует параметров." 
+			) do | e | help( e, false ) end
 
 			@bot.command(
 				:info,
@@ -35,6 +41,28 @@ module DiscordBot
 			) do | e, *args | wiki_user( e, args.join( " " ) ) end
 
 			@bot.command(
+				:ign,
+				min_args: 1,
+				permission_level: 3,
+				description: "Данная команда доступна только хозяину бота. Игнорирует пользователя.",
+				usage: "!ign @kopcap",
+				permission_message: "У вас недостаточно прав для выполнения данной команды."
+			) do | e, u | 
+				ignore( e, u, true )
+			end
+
+			@bot.command(
+				:unign,
+				min_args: 1,
+				permission_level: 3,
+				description: "Данная команда доступна только хозяину бота. Убирает игнор с пользователя.",
+				usage: "!unign @kopcap",
+				permission_message: "У вас недостаточно прав для выполнения данной команды."
+			) do | e, u | 
+				ignore( e, u, false )
+			end
+
+			@bot.command(
 				:eval,
 				min_args: 1,
 				permission_level: 3,
@@ -42,8 +70,20 @@ module DiscordBot
 				usage: "!eval <код для выполнения>",
 				permission_message: "У вас недостаточно прав для выполнения данной команды."
 			) do | e, *c | 
-				break unless e.user.id == @config[ 'owner' ]
 				code_eval( e, c.join( ' ' ) )
+			end
+
+			@bot.command(
+				:cls,
+				permission_level: 3,
+				description: "Данная команда доступна только хозяину бота. Отчищает экран консоли.",
+				usage: "!cls",
+				permission_message: "У вас недостаточно прав для выполнения данной команды."
+			) do | e, *c | 
+				break unless e.user.id == @config[ 'owner' ]
+
+				system "cls"
+				e.message.create_reaction "\u2611"
 			end
 
 			@bot.command(
@@ -56,8 +96,10 @@ module DiscordBot
 			) do | e, i | nuke( e, i ) end
 		end
 
-		def help( e )
-			e.user.pm.send_embed do | emb |
+		def help( e, s )
+			t = s ? e.user.pm : e.channel
+
+			t.send_embed do | emb |
 				emb.color = "#4A804C"
 				emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'Список команд бота', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 
@@ -67,8 +109,8 @@ module DiscordBot
 				end
 			end
 
-			if !e.channel.pm? then
-				e.respond "<@#{ e.user.id }>, список команд отправлен в ЛС."
+			if !e.channel.pm? and s then
+				e.message.create_reaction "\u2611"
 			end
 		end
 
@@ -78,7 +120,7 @@ module DiscordBot
 				return
 			end
 
-			a = a.gsub( /[^\d]+/, "" ).to_i
+			a = parse( a )
 			u = @bot.users.find { | u | u[ 0 ] == a }
 			if u.nil? then
 				e.respond "<@#{ e.user.id }>, такого участника нет на сервере."
@@ -113,7 +155,7 @@ module DiscordBot
 		def nuke( e, a )
 			return if e.channel.pm?
 
-			a = a.gsub( /[^0-9]/, '' ).to_i
+			a = parse( a )
 			if a.to_s.empty? or a == 1 then
 				a = 2
 			elsif a > 100 then
@@ -144,8 +186,34 @@ module DiscordBot
 			begin
 				eval c
 			rescue => err
-				"Ошибка в коде #{ err }:\n#{ err.backtrace.join( "\n" ) }"
+				system "cls"
+				puts "Ошибка в коде #{ err }:\n#{ err.backtrace.join( "\n" ) }"
 			end
+		end
+
+		def ignore( e, u, s )
+			u = parse( u )
+
+			if u == @config[ 'owner' ] then
+				e.respond "Я бы рад..."
+				return
+			elsif s and @bot.ignored?( u ) then
+				e.respond "Участник уже в списке игнора."
+				return
+			elsif s then
+				@bot.ignore_user( u )
+				@config[ 'ignored' ].push( u )
+			else
+				@bot.unignore_user( u )
+				@config[ 'ignored' ].delete( u )
+			end
+
+			@client.save_config
+			e.respond "Участник #{ @bot.users[ u ].username } #{ s ? "добавлен в игнор" : "убран из игнора" }."
+		end
+
+		def parse( i )
+			return i.gsub( /[^0-9]/, '' ).to_i
 		end
 	end
 end
