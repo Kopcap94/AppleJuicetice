@@ -43,9 +43,17 @@ module DiscordBot
 				register_modules
 			end
 
+			@bot.message do | e |
+				if e.channel.pm? then
+					b = e.message.timestamp.to_s.gsub( /\s\+\d+$/, '' ) + " #{ e.user.name } [#{ e.user.id }]: "
+					File.open( 'pm.log', 'a' ) { |f| f.write( b + e.message.content.split( "\n" ).join( "\n" + b ) + "\n" ) }
+				end
+			end
+
 			@bot.channel_create do | e |
-				break unless !e.channel.pm?
-				@channels[ e.server.id ][ e.name ] = e.channel.id
+				if !e.channel.pm? then
+					@channels[ e.server.id ][ e.name ] = e.channel.id
+				end
 			end
 
 			@bot.channel_delete do | e |

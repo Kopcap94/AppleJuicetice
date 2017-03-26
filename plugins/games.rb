@@ -8,21 +8,21 @@ module DiscordBot
 
 		def commands
 			@bot.command(
-				:число,
+				:l,
 				min_args: 1,
 				description: "Попробуйте отгадать число от 1 до 10.",
 				usage: "Требуется указать число от 1 до 10: !число 10"
 			) do | e, i | luck( e, i ) end
 
 			@bot.command(
-				:рулетка,
+				:r,
 				min_args: 1,
 				description: "Русская рулетка. Кол-во патронов варьируется от 1 до 5.",
 				usage: "Требуется указать число от 1 до 5: !рулетка 5"
 			) do | e, i | ruletka( e, i ) end
 
 			@bot.command(
-				:кнб,
+				:knb,
 				description: "Камень, ножницы, бумага. Не требует ввода аргументов.",
 				usage: "Не требует параметров."
 			) do | e | knb( e ) end
