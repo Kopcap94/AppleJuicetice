@@ -1,87 +1,87 @@
 require 'discordrb'
 
 module DiscordBot
-	class Games
-		def initialize( client )
-			@bot = client.bot
-		end
+  class Games
+    def initialize( client )
+      @bot = client.bot
+    end
 
-		def commands
-			@bot.command(
-				:l,
-				min_args: 1,
-				description: "Попробуйте отгадать число от 1 до 10.",
-				usage: "Требуется указать число от 1 до 10: !число 10"
-			) do | e, i | luck( e, i ) end
+    def commands
+      @bot.command(
+        :l,
+        min_args: 1,
+        description: "Попробуйте отгадать число от 1 до 10.",
+        usage: "Требуется указать число от 1 до 10: !число 10"
+      ) do | e, i | luck( e, i ) end
 
-			@bot.command(
-				:r,
-				min_args: 1,
-				description: "Русская рулетка. Кол-во патронов варьируется от 1 до 5.",
-				usage: "Требуется указать число от 1 до 5: !рулетка 5"
-			) do | e, i | ruletka( e, i ) end
+      @bot.command(
+        :r,
+        min_args: 1,
+        description: "Русская рулетка. Кол-во патронов варьируется от 1 до 5.",
+        usage: "Требуется указать число от 1 до 5: !рулетка 5"
+      ) do | e, i | ruletka( e, i ) end
 
-			@bot.command(
-				:knb,
-				description: "Камень, ножницы, бумага. Не требует ввода аргументов.",
-				usage: "Не требует параметров."
-			) do | e | knb( e ) end
-		end
+      @bot.command(
+        :knb,
+        description: "Камень, ножницы, бумага. Не требует ввода аргументов.",
+        usage: "Не требует параметров."
+      ) do | e | knb( e ) end
+    end
 
-		def luck( e, i )
-			i = parse( i )
-			u = "<@#{ e.user.id }>"
+    def luck( e, i )
+      i = parse( i )
+      u = "<@#{ e.user.id }>"
 
-			if i == 0 or ( i < 1 or i > 10 ) then
-				e.respond "#{ u }, вы точно ввели число и точно из заданного диапазона?"
-				return
-			end
+      if i == 0 or ( i < 1 or i > 10 ) then
+        e.respond "#{ u }, вы точно ввели число и точно из заданного диапазона?"
+        return
+      end
 
-			r = [*1..10].sample
-			msg = ( r == i ) ? "мои поздравления, вы угадали." : "увы, но это не моё число."
-			e.respond "#{ u }, #{ msg }"
-		end
+      r = [*1..10].sample
+      msg = ( r == i ) ? "мои поздравления, вы угадали." : "увы, но это не моё число."
+      e.respond "#{ u }, #{ msg }"
+    end
 
-		def ruletka( e, i )
-			i = parse( i )
-			u = "<@#{ e.user.id }>"
+    def ruletka( e, i )
+      i = parse( i )
+      u = "<@#{ e.user.id }>"
 
-			if i == 0 then
-				e.respond "#{ u }, а чем стрелять будем?"
-				return
-			elsif i == 6 then
-				e.respond "#{ u }, я только заряжаю полную обойму, но уже точно знаю, что ты труп."
-				sleep 1
-				e.respond "*#{ e.user.name } убит*"
-				return
-			elsif i < 0 and i > 6 then
-				e.respond "#{ u }, неверно выбрано число."
-				return
-			end
+      if i == 0 then
+        e.respond "#{ u }, а чем стрелять будем?"
+        return
+      elsif i == 6 then
+        e.respond "#{ u }, я только заряжаю полную обойму, но уже точно знаю, что ты труп."
+        sleep 1
+        e.respond "*#{ e.user.name } убит*"
+        return
+      elsif i < 0 and i > 6 then
+        e.respond "#{ u }, неверно выбрано число."
+        return
+      end
 
-			r = [*1..6].sample
-			s = [*1..6].take( 6 - i )
+      r = [*1..6].sample
+      s = [*1..6].take( 6 - i )
 
-			e.respond "#{ u }, Вам #{ ( s.include? r ) ? "повезло, вы выжили." : "не повезло, вы были убиты." }"
-		end
+      e.respond "#{ u }, Вам #{ ( s.include? r ) ? "повезло, вы выжили." : "не повезло, вы были убиты." }"
+    end
 
-		def knb( e )
-			id = "<@#{ e.user.id }>"
-			u = [*0..2].sample
-			b = [*0..2].sample
-			a = [ 'Камень', 'Ножницы', 'Бумага' ]
+    def knb( e )
+      id = "<@#{ e.user.id }>"
+      u = [*0..2].sample
+      b = [*0..2].sample
+      a = [ 'Камень', 'Ножницы', 'Бумага' ]
 
-			if u == b then
-				e.respond "У меня *#{ a[ b ] }*, а что там у тебя? *#{ a[ u ] }*? Ух ты, ничья!"
-			elsif ( u < b and ( 0..1 ) === u ) or ( u == 2 and b == 0 ) then
-				e.respond "У меня *#{ a[ b ] }*, а у тебя *#{ a[ u ] }*... Твоя победа."
-			else
-				e.respond "У меня *#{ a[ b ] }*. У тебя там... *#{ a[ u ] }*? Пфф, я победил."
-			end
-		end
+      if u == b then
+        e.respond "У меня *#{ a[ b ] }*, а что там у тебя? *#{ a[ u ] }*? Ух ты, ничья!"
+      elsif ( u < b and ( 0..1 ) === u ) or ( u == 2 and b == 0 ) then
+        e.respond "У меня *#{ a[ b ] }*, а у тебя *#{ a[ u ] }*... Твоя победа."
+      else
+        e.respond "У меня *#{ a[ b ] }*. У тебя там... *#{ a[ u ] }*? Пфф, я победил."
+      end
+    end
 
-		def parse( i )
-			return i.gsub( /[^\d]+/, '' ).to_i
-		end
-	end
+    def parse( i )
+      return i.gsub( /[^\d]+/, '' ).to_i
+    end
+  end
 end
