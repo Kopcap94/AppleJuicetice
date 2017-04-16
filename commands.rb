@@ -40,12 +40,12 @@ module DiscordBot
         usage: "Требуется указать ник участника: !user Kopcap94"
       ) do | e, *args | wiki_user( e, args.join( " " ) ) end
 
-	  @bot.command(
+      @bot.command(
         :exclude_welcome,
         permission_level: 2,
         description: "Данная команда позволяет исключить сообщения о присоединении и выходе участников на/с сервера.",
         usage: "!exclude_welcome",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e | exclude( e ) end
 
       @bot.command(
@@ -54,7 +54,7 @@ module DiscordBot
         permission_level: 3,
         description: "Данная команда доступна только хозяину бота. Игнорирует пользователя.",
         usage: "!ign @kopcap",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, u | ignore( e, u, true ) end
 
       @bot.command(
@@ -63,7 +63,7 @@ module DiscordBot
         permission_level: 3,
         description: "Данная команда доступна только хозяину бота. Убирает игнор с пользователя.",
         usage: "!unign @kopcap",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, u | ignore( e, u, false ) end
 
       @bot.command(
@@ -72,7 +72,7 @@ module DiscordBot
         permission_level: 3,
         description: "Данная команда доступна только хозяину бота.",
         usage: "!eval <код для выполнения>",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c | code_eval( e, c.join( ' ' ) ) end
 
       @bot.command(
@@ -80,7 +80,7 @@ module DiscordBot
         permission_level: 3,
         description: "Данная команда доступна только хозяину бота. Отчищает экран консоли.",
         usage: "!cls",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c |
         system "cls"
         e.message.create_reaction "\u2611"
@@ -92,7 +92,7 @@ module DiscordBot
         min_args: 1,
         description: "Удаляет указанное кол-во сообщений. Число сообщений для удаления должно быть в диапазоне от 2 до 100.",
         usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, i | nuke( e, i ) end
     end
 
@@ -152,17 +152,17 @@ module DiscordBot
       end
     end
 
-	def exclude( e )
-	  id = e.server.id
+    def exclude( e )
+      id = e.server.id
 
-	  if @config[ 'exclude welcome' ].include? id then
-	    return;
-	  end
+      if @config[ 'exclude welcome' ].include? id then
+        return;
+      end
 
-	  @config[ 'exclude welcome' ].push( id )
-	  @client.save_config
-	  e.respond "Сервер исключён."
-	end
+      @config[ 'exclude welcome' ].push( id )
+      @client.save_config
+      e.respond "Сервер исключён."
+    end
 
     def nuke( e, a )
       return if e.channel.pm?
