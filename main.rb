@@ -31,22 +31,15 @@ module DiscordBot
       )
       @channels = {}
       @cfg_mutex = Mutex.new
+	  @error_log = Mutex.new
     end
 
     def start
       @bot.ready do | e |
         @bot.update_status( 'Discord Ruby', '!help or !get_help', nil )
-
-        @bot.servers.each do |k, v|
-          @channels[ k ] = {}
-          v.roles.each do | arr, i |
-            perm = arr.permissions
-            @bot.set_role_permission( arr.id, ( perm.kick_members or perm.ban_members or perm.administrator or perm.manage_server ) ? 2 : 1 )
-          end
-          v.channels.each {| arr | @channels[ k ][ arr.name ] = arr.id }
-        end
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
+		update_info
         register_modules
         ignore_users
       end
@@ -60,25 +53,29 @@ module DiscordBot
 
       @bot.channel_create do | e |
         if !e.channel.pm? then
-          @channels[ e.server.id ][ e.name ] = e.channel.id
+          update_info
         end
       end
 
       @bot.channel_delete do | e |
-        @channels[ e.server.id ].delete( e.name )
+        update_info
       end
 
       @bot.member_join do | e |
-        e.server.general_channel.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
+	    if !@config[ 'exclude welcome' ].include?( e.server.id ) and can_do( e, :send_messages ) then
+          e.server.general_channel.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
 
-        g = e.server.roles.find { |r| r.name == "Новички" }
-        if !g.nil? then
-          e.user.add_role( g )
-        end
+          g = e.server.roles.find { |r| r.name == "Новички" }
+          if !g.nil? and can_do( e, :manage_roles ) then
+            e.user.add_role( g )
+          end
+		end
       end
 
       @bot.member_leave do | e |
-        e.server.general_channel.send_message "#{ e.user.name } покинул сервер."
+	    if !@config[ 'exclude welcome' ].include?( e.server.id ) and can_do( e, :send_messages ) then
+		  e.server.general_channel.send_message "#{ e.user.name } покинул сервер."
+		end
       end
 
       @bot.mention do | e |
@@ -120,9 +117,24 @@ module DiscordBot
         end
       end
     end
+	
+	def update_info
+	  @bot.servers.each do |k, v|
+        @channels[ k ] = {}
+        v.roles.each do | arr, i |
+          perm = arr.permissions
+          @bot.set_role_permission( arr.id, ( perm.kick_members or perm.ban_members or perm.administrator or perm.manage_server ) ? 2 : 1 )
+        end
+        v.channels.each {| arr | @channels[ k ][ arr.name ] = arr.id }
+      end
+	end
+
+	def can_do( e, type )
+	  return @bot.profile.on( e.server ).permission?( :send_messages, e.channel )
+	end
 
     def ignore_users
-      return if @config.count == 0
+      return if @config[ 'ignored' ].count == 0
 
       @config[ 'ignored' ].each do | u |
         @bot.ignore_user( u )
@@ -132,6 +144,14 @@ module DiscordBot
     def save_config
       @cfg_mutex.synchronize do
         File.open( 'cfg.json', 'w+' ) {|f| f.write( JSON.pretty_generate( @config ) ) }
+      end
+    end
+
+	def error_log( err, m )
+      @error_log.synchronize do
+		puts "New error for #{ m } on errors log."
+		s = "[#{ m }] #{ err }:\n#{ err.backtrace.join( "\n" ) }\n#{ "=" * 10 }\n"
+        File.open( 'error.log', 'a' ) {|f| f.write( s ) }
       end
     end
   end

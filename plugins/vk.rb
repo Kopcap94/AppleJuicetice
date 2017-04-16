@@ -1,6 +1,3 @@
-require 'httparty'
-require 'json'
-
 module DiscordBot
   class VK
     include HTTParty
@@ -20,7 +17,8 @@ module DiscordBot
         permission_level: 2,
         min_args: 1,
         description: "Добавляет ID группы VK в список патрулируемых.",
-        usage: "Требует ID группы: !add_group -2000"
+        usage: "Требует ID группы: !add_group -2000",
+		permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, g | add_group( e, g ) end
     end
 
@@ -38,7 +36,7 @@ module DiscordBot
         begin
           get_data_from_group( t, d )
         rescue => err
-          puts "#{ err } at #{ t }: #{ err.backtrace }"
+		  @client.error_log( err, "VK" )
         end
 
         sleep 300
