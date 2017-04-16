@@ -18,16 +18,16 @@ module DiscordBot
         min_args: 1,
         description: "Добавляет вики в список патрулируемых и выводит правки в канал #recentchanges.",
         usage: "!add_wiki ru.mlp",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w | add_wiki( e, w ) end
 
-	  @bot.command(
+      @bot.command(
         :attr_wiki,
         permission_level: 2,
         min_args: 2,
         description: "Изменяет переменную отображения загрузок (uploads) и логов (logs).",
         usage: "!attr_wiki ru.mlp logs",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w, t | attr_wiki( e, w, t ) end
     end
 
@@ -77,8 +77,8 @@ module DiscordBot
 
       d.reverse.each do | obj |
         if( obj[ :rcid ] <= rcid ) or
-		  ( obj[ :revid ] == 0 and !data[ 'logs' ] ) or
-		  ( obj[ :type ] == 'log' and obj[ :ns ] == 6 and !data[ 'uploads' ] )
+          ( obj[ :revid ] == 0 and !data[ 'logs' ] ) or
+          ( obj[ :type ] == 'log' and obj[ :ns ] == 6 and !data[ 'uploads' ] )
           next
         end
 
@@ -122,8 +122,8 @@ module DiscordBot
       if @config[ 'wikies' ][ w ].nil? then
         @config[ 'wikies' ][ w ] = { 
           'rcid' => 0,
-		  'uploads' => true,
-		  'logs' => true,
+          'uploads' => true,
+          'logs' => true,
           'servers' => [ id ]
         }
       elsif @config[ 'wikies' ][ w ][ 'servers' ].include?( id ) then
@@ -138,20 +138,20 @@ module DiscordBot
       e.respond "<@#{ e.user.id }>, #{ w } добавлен в список для патрулирования."
     end
 
-	def attr_wiki( e, w, t )
-	  if @config[ 'wikies' ][ w ].nil? then
-	    e.respond "Такого вики-проекта не существует."
-		return
-	  elsif ![ 'uploads', 'logs' ].include?( t ) then
-	    e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs."
-		return
-	  end
+    def attr_wiki( e, w, t )
+      if @config[ 'wikies' ][ w ].nil? then
+        e.respond "Такого вики-проекта не существует."
+        return
+      elsif ![ 'uploads', 'logs' ].include?( t ) then
+        e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs."
+        return
+      end
 
-	  s = @config[ 'wikies' ][ w ][ t ]
-	  @config[ 'wikies' ][ w ][ t ] = !s
+      s = @config[ 'wikies' ][ w ][ t ]
+      @config[ 'wikies' ][ w ][ t ] = !s
 
-	  @client.save_config
-	  e.respond "Значение параметра #{ t } для вики #{ w } теперь #{ !s }."
-	end
+      @client.save_config
+      e.respond "Значение параметра #{ t } для вики #{ w } теперь #{ !s }."
+    end
   end
 end
