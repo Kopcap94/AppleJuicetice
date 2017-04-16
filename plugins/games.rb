@@ -1,5 +1,3 @@
-require 'discordrb'
-
 module DiscordBot
   class Games
     def initialize( client )
@@ -8,21 +6,21 @@ module DiscordBot
 
     def commands
       @bot.command(
-        :l,
+        :число,
         min_args: 1,
         description: "Попробуйте отгадать число от 1 до 10.",
         usage: "Требуется указать число от 1 до 10: !число 10"
       ) do | e, i | luck( e, i ) end
 
       @bot.command(
-        :r,
+        :рулетка,
         min_args: 1,
         description: "Русская рулетка. Кол-во патронов варьируется от 1 до 5.",
         usage: "Требуется указать число от 1 до 5: !рулетка 5"
       ) do | e, i | ruletka( e, i ) end
 
       @bot.command(
-        :knb,
+        :кнб,
         description: "Камень, ножницы, бумага. Не требует ввода аргументов.",
         usage: "Не требует параметров."
       ) do | e | knb( e ) end
@@ -54,7 +52,7 @@ module DiscordBot
         sleep 1
         e.respond "*#{ e.user.name } убит*"
         return
-      elsif i < 0 and i > 6 then
+      elsif ( i < 0 or ( 6 - i ) < 0 ) and i > 6 then
         e.respond "#{ u }, неверно выбрано число."
         return
       end
@@ -73,7 +71,7 @@ module DiscordBot
 
       if u == b then
         e.respond "У меня *#{ a[ b ] }*, а что там у тебя? *#{ a[ u ] }*? Ух ты, ничья!"
-      elsif ( u < b and ( 0..1 ) === u ) or ( u == 2 and b == 0 ) then
+      elsif ( u < b and ( 0..1 ) === u and ( 1..2 ) === b ) or ( u == 2 and b == 0 ) then
         e.respond "У меня *#{ a[ b ] }*, а у тебя *#{ a[ u ] }*... Твоя победа."
       else
         e.respond "У меня *#{ a[ b ] }*. У тебя там... *#{ a[ u ] }*? Пфф, я победил."

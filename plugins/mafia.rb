@@ -1,5 +1,3 @@
-require 'discordrb'
-
 module DiscordBot
   class Mafia
     def initialize( client )
@@ -88,7 +86,7 @@ module DiscordBot
           mafia_time_thread( id )
           mafia_join( e )
         rescue => err
-          puts "#{ err }: #{ err.backtrace }"
+          @client.error_log( err, "MAFIA" )
         end
 
         e.respond "@here Начинается сбор заявок на участие в игре! Оставить заявку можно комнадой !mafia_join. Сбор заявок в течении 5 минут."
@@ -189,7 +187,6 @@ module DiscordBot
 
     def mafia_day_thread( id )
       Thread.new {
-        disable_chat( id, false )
         @mafia[ id ][ 'sec_vote' ] = {}
         u = [ [], 0 ]
 
@@ -219,7 +216,6 @@ module DiscordBot
 
     def mafia_night_thread( id )
       Thread.new {
-        disable_chat( id, true )
         @bot.send_message( @channels[ id ][ 'mafia' ], "Наступает ночь. Мирные жители засыпают. Просыпается мафия. У мафии 1,5 минуты на принятие решений." )
 
         @mafia[ id ][ 'mafia_vote' ] = []
@@ -338,26 +334,6 @@ module DiscordBot
 
         @bot.send_message( @channels[ id ][ 'mafia' ], "С утра местный шериф, попивая кофе у себя дома, радостно улыбнётся, прочитав заголовок о полном провале мафии в этом городе. На этот раз игра для них закончена. Но конец ли это в общем?" )
         return
-      end
-    end
-
-    def disable_chat( id, t )
-      a = Discordrb::Permissions.new
-      d = Discordrb::Permissions.new
-
-      @bot.servers.each do | s, v |
-        if s == id then
-          r = v.roles.find { | arr | arr.name == "@everyone" }
-          c = v.channels.find { |arr| arr.name == "mafia" }
-  
-          if t then
-            d.can_send_messages = true
-          else
-            a.can_send_messages = true
-          end
-
-          c.define_overwrite( r, a, d )
-        end
       end
     end
 
