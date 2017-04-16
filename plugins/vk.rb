@@ -18,7 +18,7 @@ module DiscordBot
         min_args: 1,
         description: "Добавляет ID группы VK в список патрулируемых.",
         usage: "Требует ID группы: !add_group -2000",
-		permission_message: "Недостаточно прав, чтобы использовать эту команду."
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, g | add_group( e, g ) end
     end
 
@@ -36,7 +36,7 @@ module DiscordBot
         begin
           get_data_from_group( t, d )
         rescue => err
-		  @client.error_log( err, "VK" )
+          @client.error_log( err, "VK" )
         end
 
         sleep 300
