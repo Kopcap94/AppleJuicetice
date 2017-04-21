@@ -55,7 +55,7 @@ module DiscordBot
     def get_data_from_api( w, data )
       d =  JSON.parse(
         HTTParty.get(
-          "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes&format=json",
+          "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
           :verify => false
         ).body,
         :symbolize_names => true
@@ -78,25 +78,77 @@ module DiscordBot
       d.reverse.each do | obj |
         if( obj[ :rcid ] <= rcid ) or
           ( obj[ :revid ] == 0 and !data[ 'logs' ] ) or
-          ( obj[ :type ] == 'log' and obj[ :ns ] == 6 and !data[ 'uploads' ] )
+          ( obj[ :type ] == 'log' and obj[ :logtype ] == 'upload' and !data[ 'uploads' ] ) or
+          ( obj[ :user ] == 'WikiaBot' or obj[ :user ] == 'Wikia' )
           next
         end
 
         emb = Discordrb::Webhooks::Embed.new
-        emb.color = "#507299"
 
-        title = "[ #{ w } ] #{ obj[ :title ] }"
-        if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "[ #{ w } ] Тема на форуме или стене обсуждения" end
+        if obj[ :type ] != 'log' then
+          emb.color = "#507299"
 
-        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "http://#{ w }.wikia.com/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
-        emb.title = "http://#{ w }.wikia.com/index.php?diff=#{ obj[ :revid ] }"
-        emb.add_field( name: "Участник", value: obj[ :user ], inline: true )
+          title = "[ #{ w } ] #{ obj[ :title ] }"
+          if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "[ #{ w } ] Тема на форуме или стене обсуждения" end
 
-        if obj[ :ns ] != 6 then
+          emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "http://#{ w }.wikia.com/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
+          emb.title = "http://#{ w }.wikia.com/index.php?diff=#{ obj[ :revid ] }"
           emb.add_field( name: "Изменения:", value: "#{ obj[ :newlen ] - obj[ :oldlen ] } байт", inline: true )
-          if obj[ :comment ].gsub( /^\s+/, '' ) != "" then
-            emb.add_field( name: "Описание правки", value: "#{ obj[ :comment ] }" )
+        else
+          emb.color = "#759B01"
+
+          name = ""
+          url = ""
+          title = ""
+          value = ""
+
+          case obj[ :logtype ]
+          when "wikifeatures"
+            name = "WikiFeatures"
+            url = "wikifeatures"
+            title = "Опция"
+            value = obj[ :comment ].gsub( /^[^:]+:/, '' ).to_s
+          when "move"
+            name = "переименования"
+            url = "move"
+            title = "Переименована страница"
+            value = obj[ :title ]
+          when "delete"
+            name = "удаления"
+            url = "delete"
+            title = "#{ obj[ :logaction ] == 'delete' ? "Удалена" : "Восстановлена" } страница"
+            value = obj[ :title ]
+          when "protect"
+            name = "защиты"
+            url = "protect"
+            title = obj[ :logaction ] == 'protect' ? "Защищена страница" : "Снята защита"
+            value = obj[ :title ]
+          when "block"
+            name = "блокировок"
+            url = "block"
+            title = obj[ :logaction ] == 'block' ? "Заблокирован" : "Разблокирован"
+            value = obj[ :title ].gsub( /^[^:]+:/, '' )
+          when "upload"
+            name = "загрузок"
+            url = "upload"
+            title = obj[ :logaction ] == 'upload' ? "Загружен файл" : "Перезаписан файл"
+            value = obj[ :title ].gsub( /^[^:]+:/, '' )
+          else
+            next
           end
+
+          emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "[ #{ w } ] Лог #{ name }", url: "http://#{ w }.wikia.com/wiki/Special:Log/#{ url }" )
+          emb.add_field( name: title, value: value, inline: true )
+
+          # Blocks
+          if obj[ :logaction ] == 'block' then
+            emb.add_field( name: "Истекает", value: obj[ :block ][ :expiry ], inline: true )
+          end
+        end
+
+        emb.add_field( name: "Выполнил", value: obj[ :user ], inline: true )
+        if obj[ :comment ].gsub( /^\s+/, '' ) != "" then
+          emb.add_field( name: "Описание", value: "#{ obj[ :comment ][ 0..100 ] }" )
         end
 
         data[ 'servers' ].each do | id |
