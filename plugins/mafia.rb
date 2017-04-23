@@ -47,7 +47,7 @@ module DiscordBot
         :mafia_kill,
         min_args: 2,
         description: "Команда для голосования мафии.",
-        usage: "Требуется указать ID сервера и игрока: !mafia_kill <id сервера> <id игрок>. Пример: !mafia_kil 23232323 3332323."
+        usage: "Требуется указать ID сервера и игрока: !mafia_kill <id сервера> <id игрок>. Пример: !mafia_kill 23232323 3332323."
       ) do | e, s, v | mafia_kill( e, s, v ) end
     end
 
@@ -97,12 +97,12 @@ module DiscordBot
       Thread.new {
         4.downto( 1 ) do | i |
           sleep 60
-          @bot.send_message( @channels[ id ][ 'mafia' ], "До завершения сбора заявок: #{ i } #{ i == 1 ? "минута":"минуты" }" )
+          @bot.send_message( @channels[ id ][ 'mafia' ], "До завершения сбора заявок #{ i } #{ i == 1 ? "минута":"минуты" }" )
         end
         sleep 60
   
         if @mafia[ id ][ 'users' ].count < 4 then
-          @bot.send_message( @channels[ id ][ 'mafia' ], "Игра отменена, мало участников: #{ @mafia[ id ][ 'users' ].count } < 4." )
+          @bot.send_message( @channels[ id ][ 'mafia' ], "Игра отменена, мало участников." )
           @mafia[ id ][ 'state' ] = false
           return true
         end
@@ -187,11 +187,18 @@ module DiscordBot
 
     def mafia_day_thread( id )
       Thread.new {
+        @mafia[ id ][ 'night' ] = false
         @mafia[ id ][ 'sec_vote' ] = {}
         u = [ [], 0 ]
 
         @bot.send_message( @channels[ id ][ 'mafia' ], "Как бы то ни было, у жителей есть 4 минуты, чтобы найти преступников и убить их.\nИспользуйте команду !mafia_vote с упоминанием игрока, чтобы проголосовать за его убийство. Пример - !mafia_vote @kopcap" )
         sleep 240 # 4 минуты на размышление
+
+        if @mafia[ id ][ 'sec_vote' ].count == 0 then
+          @bot.send_message( @channels[ id ][ 'mafia' ], "Видимо, мирным жителям неинтересна инициатива голосования и выживания." )
+          if @mafia[ id ][ 'running' ] then mafia_night_thread( id ) end
+          return
+        end
 
         @mafia[ id ][ 'sec_vote' ].each do | k, v |
           c = v.count
@@ -218,6 +225,7 @@ module DiscordBot
       Thread.new {
         @bot.send_message( @channels[ id ][ 'mafia' ], "Наступает ночь. Мирные жители засыпают. Просыпается мафия. У мафии 1,5 минуты на принятие решений." )
 
+        @mafia[ id ][ 'night' ] = true
         @mafia[ id ][ 'mafia_vote' ] = []
         @mafia[ id ][ 'target' ] = nil
         list = "Текущий мирных жителей:\n"
@@ -226,11 +234,12 @@ module DiscordBot
           list = list + "ID: #{ p } [ #{ @mafia[ id ][ 'users' ][ p ] } ]\n"
         end
 
-        list = list + "**ID сервера: #{ id }**.\nПредзаполненная команда: **!mafia_kill #{ id }**\n"
+        list = list + "**ID сервера: #{ id }**.\nПредзаполненная команда:"
 
         @mafia[ id ][ 'roles' ][ :main ].each do | i |
           m = @bot.users.find { | k, us | k == i }[ 1 ]
           m.pm "#{ list }"
+          m.pm "**!mafia_kill #{ id }**"
         end
 
         sleep 90 #1,5 минуты
@@ -286,9 +295,13 @@ module DiscordBot
 
     def mafia_kill( e, id, v )
       v = parse( v )
+      id = parse( id )
 
       if @mafia[ id ].nil? or !@mafia[ id ][ 'running' ] then
         e.user.pm "Неправильно указан id сервера или игра в данный момент не запущена."
+        return
+      elsif !@mafia[ id ][ 'night' ] then
+        e.user.pm "Вы не можете голосовать днём."
         return
       elsif !@mafia[ id ][ 'roles' ][ :main ].include?( e.user.id ) then
         return
@@ -324,10 +337,10 @@ module DiscordBot
       s = @mafia[ id ][ 'roles' ][ :second ].count
 
       if ( m == 1 and s == 1 ) or ( m == 2 and s < 3 ) then
-        @mafia[ id ] = { 'state' => false, 'running' => false }
-
         @bot.send_message( @channels[ id ][ 'mafia' ], "Сколько бы мирные жители не старались бороться с мафией, у них это не вышло. Невозможно представить, какой ужас испытали последние выжившие, встретившись один на один с мафией. К сожалению, их игра закончена." )
         @bot.send_message( @channels[ id ][ 'mafia' ], "Выжившая мафия: <@#{ @mafia[ id ][ 'roles' ][ :main ].join( "> <@!") }>" )
+
+        @mafia[ id ] = { 'state' => false, 'running' => false }
         return
       elsif m == 0 then
         @mafia[ id ] = { 'state' => false, 'running' => false }
