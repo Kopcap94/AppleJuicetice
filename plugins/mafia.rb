@@ -1,10 +1,9 @@
 module DiscordBot
   class Mafia
     def initialize( client )
-      @client = client
+      @c = client
       @bot = client.bot
       @channels = client.channels
-      @config = client.config
 
       @mafia = {}
       for_init
@@ -63,17 +62,17 @@ module DiscordBot
       elsif @channels[ id ][ 'mafia' ].nil? then
         e.respond "Отсутствует канал для игры в мафию. Пожалуйста, создайте канал с названием mafia, чтобы запустить игру."
         return
-      elsif s == true and state == "on" then
+      elsif s and state == "on" then
         e.respond "Мафия уже включена."
         return
-      elsif s == false and state == "off" then
+      elsif !s and state == "off" then
         e.respond "Мафия на данный момент отключена. Нельзя отключить то, что уже отключено."
         return
-      elsif s == true and state == "off" then
+      elsif s and state == "off" then
         @mafia[ id ][ 'state' ] = false
         e.respond "Игра отключена."
         return
-      elsif s == false and state == "on" then
+      elsif !s and state == "on" then
         if @mafia[ id ][ 'running' ] then
           e.respond "На данный момент идёт игра. Включить игру снова невозможно."
           return
@@ -86,7 +85,7 @@ module DiscordBot
           mafia_time_thread( id )
           mafia_join( e )
         rescue => err
-          @client.error_log( err, "MAFIA" )
+          @c.error_log( err, "MAFIA" )
         end
 
         e.respond "@here Начинается сбор заявок на участие в игре! Оставить заявку можно комнадой !mafia_join. Сбор заявок в течении 5 минут."
@@ -228,13 +227,13 @@ module DiscordBot
         @mafia[ id ][ 'night' ] = true
         @mafia[ id ][ 'mafia_vote' ] = []
         @mafia[ id ][ 'target' ] = nil
-        list = "Текущий мирных жителей:\n"
+        list = "__**ГОЛОСОВАНИЕ МАФИИ ПРОХОДИТ ТОЛЬКО ТУТ!**__\nТекущий мирных жителей:\n"
 
         @mafia[ id ][ 'roles' ][ :second ].each do | p |
           list = list + "ID: #{ p } [ #{ @mafia[ id ][ 'users' ][ p ] } ]\n"
         end
 
-        list = list + "**ID сервера: #{ id }**.\nПредзаполненная команда:"
+        list = list + "**ID сервера: #{ id }**.\nПредзаполненная команда **c ID сервера**, допишите только ID игрока:"
 
         @mafia[ id ][ 'roles' ][ :main ].each do | i |
           m = @bot.users.find { | k, us | k == i }[ 1 ]
@@ -267,7 +266,7 @@ module DiscordBot
         return
       end
 
-      v = parse( v )
+      v = @c.parse( v )
       u = e.user.id
       id = e.server.id
 
@@ -294,8 +293,8 @@ module DiscordBot
     end
 
     def mafia_kill( e, id, v )
-      v = parse( v )
-      id = parse( id )
+      v = @c.parse( v )
+      id = @c.parse( id )
 
       if @mafia[ id ].nil? or !@mafia[ id ][ 'running' ] then
         e.user.pm "Неправильно указан id сервера или игра в данный момент не запущена."
@@ -307,6 +306,9 @@ module DiscordBot
         return
       elsif @mafia[ id ][ 'roles' ][ :main ].include?( v ) then 
         e.respond "Вы не можете убить своего напарника. Но мне нравится эта идея."
+        return
+      elsif !@mafia[ id ][ 'roles' ][ :second ].include?( v ) then
+        e.respond "Игрока с таким ID нет. Пожалуйста, проверьте правильность ввода ID."
         return
       elsif @mafia[ id ][ 'mafia_vote' ].include?( v ) then
         @mafia[ id ][ 'target' ] = v
@@ -336,7 +338,7 @@ module DiscordBot
       m = @mafia[ id ][ 'roles' ][ :main ].count
       s = @mafia[ id ][ 'roles' ][ :second ].count
 
-      if ( m == 1 and s == 1 ) or ( m == 2 and s < 3 ) then
+      if ( m == 1 and s < 2 ) or ( m == 2 and s < 3 ) then
         @bot.send_message( @channels[ id ][ 'mafia' ], "Сколько бы мирные жители не старались бороться с мафией, у них это не вышло. Невозможно представить, какой ужас испытали последние выжившие, встретившись один на один с мафией. К сожалению, их игра закончена." )
         @bot.send_message( @channels[ id ][ 'mafia' ], "Выжившая мафия: <@#{ @mafia[ id ][ 'roles' ][ :main ].join( "> <@!") }>" )
 
@@ -348,10 +350,6 @@ module DiscordBot
         @bot.send_message( @channels[ id ][ 'mafia' ], "С утра местный шериф, попивая кофе у себя дома, радостно улыбнётся, прочитав заголовок о полном провале мафии в этом городе. На этот раз игра для них закончена. Но конец ли это в общем?" )
         return
       end
-    end
-
-    def parse( t )
-      return t.gsub( /[^0-9]/, '' ).to_i
     end
   end
 end

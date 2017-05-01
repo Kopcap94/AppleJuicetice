@@ -3,7 +3,7 @@ module DiscordBot
     include HTTParty
 
     def initialize( client )
-      @client = client
+      @c = client
       @bot = client.bot
       @channels = client.channels
       @config = client.config
@@ -44,7 +44,7 @@ module DiscordBot
         begin
           get_data_from_api( w, d )
         rescue => err
-          @client.error_log( err, "WIKI" )
+          @c.error_log( err, "WIKI" )
         end
 
         sleep 60
@@ -67,7 +67,7 @@ module DiscordBot
 
       if rcid == 0 then
         @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
-        @client.save_config
+        @c.save_config
         return
       end
 
@@ -159,7 +159,7 @@ module DiscordBot
       end
 
       @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
-      @client.save_config
+      @c.save_config
     end
 
     def add_wiki( e, w )
@@ -185,7 +185,7 @@ module DiscordBot
         @config[ 'wikies' ][ w ][ 'servers' ].push( id )
       end
 
-      @client.save_config
+      @c.save_config
       init_checking( w, @config[ 'wikies' ][ w ] )
       e.respond "<@#{ e.user.id }>, #{ w } добавлен в список для патрулирования."
     end
@@ -202,7 +202,7 @@ module DiscordBot
       s = @config[ 'wikies' ][ w ][ t ]
       @config[ 'wikies' ][ w ][ t ] = !s
 
-      @client.save_config
+      @c.save_config
       e.respond "Значение параметра #{ t } для вики #{ w } теперь #{ !s }."
     end
   end
