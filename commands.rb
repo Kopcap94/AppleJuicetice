@@ -1,7 +1,7 @@
 module DiscordBot
   class Commands
     def initialize( client )
-      @client = client
+      @c = client
       @bot = client.bot
       @channels = client.channels
       @config = client.config
@@ -120,7 +120,7 @@ module DiscordBot
         return
       end
 
-      a = parse( a )
+      a = @c.parse( a )
       u = @bot.users.find { | u | u[ 0 ] == a }
       if u.nil? then
         e.respond "<@#{ e.user.id }>, такого участника нет на сервере."
@@ -160,14 +160,14 @@ module DiscordBot
       end
 
       @config[ 'exclude welcome' ].push( id )
-      @client.save_config
+      @c.save_config
       e.respond "Сервер исключён."
     end
 
     def nuke( e, a )
       return if e.channel.pm?
 
-      a = parse( a )
+      a = @c.parse( a )
       if a.to_s.empty? or a == 1 then
         a = 2
       elsif a > 100 then
@@ -204,7 +204,7 @@ module DiscordBot
     end
 
     def ignore( e, u, s )
-      u = parse( u )
+      u = @c.parse( u )
 
       if u == @config[ 'owner' ] then
         e.respond "Я бы рад..."
@@ -220,12 +220,8 @@ module DiscordBot
         @config[ 'ignored' ].delete( u )
       end
 
-      @client.save_config
+      @c.save_config
       e.respond "Участник #{ @bot.users[ u ].username } #{ s ? "добавлен в игнор" : "убран из игнора" }."
-    end
-
-    def parse( i )
-      return i.gsub( /[^0-9]/, '' ).to_i
     end
   end
 end

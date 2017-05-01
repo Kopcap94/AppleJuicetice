@@ -15,7 +15,8 @@ module DiscordBot
           'owner' => 0,
           'wikies' => {},
           'groups' => {},
-          'ignored' => []
+          'ignored' => [],
+          'exclude welcome' => []
         }))}
         puts "Создан новый конфиг, заполните его."
       end
@@ -40,8 +41,8 @@ module DiscordBot
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
         update_info
-        register_modules
         ignore_users
+        register_modules
       end
     
       @bot.message do | e |
@@ -62,19 +63,25 @@ module DiscordBot
       end
 
       @bot.member_join do | e |
-        if !@config[ 'exclude welcome' ].include?( e.server.id ) and can_do( e, :send_messages ) then
-          e.server.general_channel.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
+        s = e.server
+        c = e.server.general_channel
 
-          g = e.server.roles.find { |r| r.name == "Новички" }
-          if !g.nil? and can_do( e, :manage_roles ) then
+        if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
+          c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
+
+          g = s.roles.find { |r| r.name == "Новички" }
+          if !g.nil? and can_do( s, 'manage_roles' ) then
             e.user.add_role( g )
           end
         end
       end
 
       @bot.member_leave do | e |
-        if !@config[ 'exclude welcome' ].include?( e.server.id ) and can_do( e, :send_messages ) then
-          e.server.general_channel.send_message "#{ e.user.name } покинул сервер."
+        s = e.server
+        c = e.server.general_channel
+
+        if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
+          c.send_message "#{ e.user.name } покинул сервер."
         end
       end
 
@@ -103,19 +110,21 @@ module DiscordBot
     end
 
     def register_modules
-      DiscordBot.constants.select do | c |
-        if DiscordBot.const_get( c ).is_a? Class then
-          if c.to_s == "Main" then
-            next
-          end
+      Thread.new {
+        DiscordBot.constants.select do | c |
+          if DiscordBot.const_get( c ).is_a? Class then
+            if c.to_s == "Main" then
+              next
+            end
 
-          m = DiscordBot.const_get( c ).new( self )
+            m = DiscordBot.const_get( c ).new( self )
 
-          if DiscordBot.const_get( c ).method_defined? "commands" then
-            m.commands
+            if DiscordBot.const_get( c ).method_defined? "commands" then
+              m.commands
+            end
           end
         end
-      end
+      }
     end
     
     def update_info
@@ -129,8 +138,8 @@ module DiscordBot
       end
     end
 
-    def can_do( e, type )
-      return @bot.profile.on( e.server ).permission?( :send_messages, e.channel )
+    def can_do( s, t, c = nil )
+      return @bot.profile.on( s ).permission?( t.to_sym, c )
     end
 
     def ignore_users
@@ -153,6 +162,10 @@ module DiscordBot
         s = "[#{ m }] #{ err }:\n#{ err.backtrace.join( "\n" ) }\n#{ "=" * 10 }\n"
         File.open( 'error.log', 'a' ) {|f| f.write( s ) }
       end
+    end
+
+    def parse( i )
+      return i.gsub( /[^\d]+/, '' ).to_i
     end
   end
 end

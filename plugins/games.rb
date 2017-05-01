@@ -1,6 +1,7 @@
 module DiscordBot
   class Games
     def initialize( client )
+      @c = client
       @bot = client.bot
     end
 
@@ -27,7 +28,7 @@ module DiscordBot
     end
 
     def luck( e, i )
-      i = parse( i )
+      i = @c.parse( i )
       u = "<@#{ e.user.id }>"
 
       if i == 0 or ( i < 1 or i > 10 ) then
@@ -41,7 +42,7 @@ module DiscordBot
     end
 
     def ruletka( e, i )
-      i = parse( i )
+      i = @c.parse( i )
       u = "<@#{ e.user.id }>"
 
       if i == 0 then
@@ -52,7 +53,7 @@ module DiscordBot
         sleep 1
         e.respond "*#{ e.user.name } убит*"
         return
-      elsif ( i < 0 or ( 6 - i ) < 0 ) and i > 6 then
+      elsif i < 0 or ( 6 - i ) < 0 then
         e.respond "#{ u }, неверно выбрано число."
         return
       end
@@ -76,10 +77,6 @@ module DiscordBot
       else
         e.respond "У меня *#{ a[ b ] }*. У тебя там... *#{ a[ u ] }*? Пфф, я победил."
       end
-    end
-
-    def parse( i )
-      return i.gsub( /[^\d]+/, '' ).to_i
     end
   end
 end
