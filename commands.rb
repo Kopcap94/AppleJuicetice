@@ -50,7 +50,6 @@ module DiscordBot
 
       @bot.command(
         :bl,
-        min_args: 1,
         permission_level: 3,
         description: "Данная команда доступна только хозяину бота. Добавляет сервер в чёрный список.",
         usage: "!bl <id>",
@@ -184,7 +183,7 @@ module DiscordBot
 
     def blacklist( e, id = nil )
       if id.nil? then
-        id = e.server.id
+        id = e.server.id.to_s
       end
 
       id = @c.parse( id )
@@ -200,7 +199,7 @@ module DiscordBot
 
       if !@channels[ id ].nil? then
         e.respond "В данный момент я нахожусь на том сервере. Выхожу..."
-        @bot.server[ id ].leave
+        @bot.servers[ id ].leave
       end
     end
 

@@ -63,21 +63,26 @@ module DiscordBot
         update_info
       end
 
-      @bot.member_join do | e |
+      @bot.server_create do | e |
         s = e.server
         c = e.server.general_channel
 
-        if @bot.profile.id == e.user.id then
-          if @config[ 'blacklisted' ].include?( s.id ) then
-            c.send_message "Ваш сервер занесён в чёрный список. Я не буду здесь находиться."
-            @bot.servers[ s.id ].leave
-
-            return
-          end
-
-          update_info
-          return
+        if @config[ 'blacklisted' ].include?( s.id ) then
+          c.send_message "Ваш сервер занесён в чёрный список. Я не буду здесь находиться."
+          s.leave
+          next
         end
+
+        update_info
+      end
+
+      @bot.server_delete do | e |
+        update_info
+      end
+
+      @bot.member_join do | e |
+        s = e.server
+        c = e.server.general_channel
 
         if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
           c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
@@ -90,10 +95,7 @@ module DiscordBot
       end
 
       @bot.member_leave do | e |
-        if @bot.profile.id == e.user.id then
-          update_info
-          return
-        end
+        next unless @bot.profile.id != e.user.id
 
         s = e.server
         c = e.server.general_channel
