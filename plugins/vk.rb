@@ -98,7 +98,8 @@ module DiscordBot
         end
       end
 
-      d[ 'servers' ].each do | serv | 
+      d[ 'servers' ].each do | serv |
+        if @channels[ serv ][ 'news' ].nil? then next; end
         @bot.send_message( @channels[ serv ][ 'news' ], '', false, emb )
       end
 

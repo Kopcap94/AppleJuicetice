@@ -49,6 +49,15 @@ module DiscordBot
       ) do | e | exclude( e ) end
 
       @bot.command(
+        :bl,
+        min_args: 1,
+        permission_level: 3,
+        description: "Данная команда доступна только хозяину бота. Добавляет сервер в чёрный список.",
+        usage: "!bl <id>",
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
+      ) do | e, id | blacklist( e, id ) end
+
+      @bot.command(
         :ign,
         min_args: 1,
         permission_level: 3,
@@ -137,17 +146,26 @@ module DiscordBot
           :verify => false
         ).body,
         :symbolize_names => true
-      )[ :query ][ :users ][0]
+      )[ :query ][ :users ][ 0 ]
       
       if !us[ :missing ].nil? then
         e.respond "Участника #{ u } не существует."
         return
       end
 
+      avatar = JSON.parse(
+        HTTParty.get(
+          URI.encode( "http://www.wikia.com/api/v1/User/Details/?ids=#{ us[ :userid ] }" ),
+          :verify => false
+        ).body,
+        :symbolize_names => true
+      )[ :items ].first[ :avatar ]
+
       e.channel.send_embed do | emb |
         emb.color = "#4A804C"
-        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "#{ u } [ ID: #{ us[ :userid ] } ]", url: "http://community.wikia.com/wiki/User:#{ u.gsub( /\s/, "_" ) }" )
-        emb.add_field( name: "Регистрация", value: "#{ us[:registration].nil? ? "отключён" : us[ :registration ].gsub( /[TZ]/, " " ) }", inline: true )
+        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "#{ u }", url: "http://community.wikia.com/wiki/User:#{ u.gsub( /\s/, "_" ) }" )
+        emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ avatar }#.png" )
+        emb.add_field( name: "Регистрация", value: "#{ us[ :registration ].nil? ? "отключён" : us[ :registration ].gsub( /[TZ]/, " " ) }", inline: true )
         emb.add_field( name: "Кол-во правок", value: us[ :editcount ], inline: true )
       end
     end
@@ -162,6 +180,28 @@ module DiscordBot
       @config[ 'exclude welcome' ].push( id )
       @c.save_config
       e.respond "Сервер исключён."
+    end
+
+    def blacklist( e, id = nil )
+      if id.nil? then
+        id = e.server.id
+      end
+
+      id = @c.parse( id )
+      if @config[ 'blacklisted' ].include?( id ) then
+        e.respond "Сервер уже числится в чёрном списке."
+        return
+      end
+
+      @config[ 'blacklisted' ].push( id )
+      @c.save_config
+
+      e.respond "Сервер #{ id } добавлен в чёрный список."
+
+      if !@channels[ id ].nil? then
+        e.respond "В данный момент я нахожусь на том сервере. Выхожу..."
+        @bot.server[ id ].leave
+      end
     end
 
     def nuke( e, a )
@@ -189,8 +229,6 @@ module DiscordBot
         emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images2.wikia.nocookie.net/siegenax/ru/images/8/84/1_obey-giant_1024.png' )
 
         emb.add_field( name: "Исходный код бота", value: "https://github.com/Kopcap94/Discord-AJ" )
-
-        emb.footer = Discordrb::Webhooks::EmbedFooter.new( text: "v1.0.4b" )
       end
     end
 

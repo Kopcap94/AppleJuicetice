@@ -16,6 +16,7 @@ module DiscordBot
           'wikies' => {},
           'groups' => {},
           'ignored' => [],
+          'blacklisted' => [],
           'exclude welcome' => []
         }))}
         puts "Создан новый конфиг, заполните его."
@@ -66,6 +67,18 @@ module DiscordBot
         s = e.server
         c = e.server.general_channel
 
+        if @bot.profile.id == e.user.id then
+          if @config[ 'blacklisted' ].include?( s.id ) then
+            c.send_message "Ваш сервер занесён в чёрный список. Я не буду здесь находиться."
+            @bot.servers[ s.id ].leave
+
+            return
+          end
+
+          update_info
+          return
+        end
+
         if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
           c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
 
@@ -77,6 +90,11 @@ module DiscordBot
       end
 
       @bot.member_leave do | e |
+        if @bot.profile.id == e.user.id then
+          update_info
+          return
+        end
+
         s = e.server
         c = e.server.general_channel
 
