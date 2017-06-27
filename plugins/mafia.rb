@@ -54,6 +54,8 @@ module DiscordBot
       if e.channel.pm? then return; end
 
       id = e.server.id
+      if @mafia[ id ].nil? then @mafia[ id ] = { 'state' => false, 'running' => false } end
+
       s = @mafia[ id ][ 'state' ]
 
       if e.channel.pm? then
@@ -88,7 +90,7 @@ module DiscordBot
           @c.error_log( err, "MAFIA" )
         end
 
-        e.respond "@here Начинается сбор заявок на участие в игре! Оставить заявку можно комнадой !mafia_join. Сбор заявок в течении 5 минут."
+        e.respond "@here Начинается сбор заявок на участие в игре! Оставить заявку можно командой !mafia_join. Сбор заявок в течении 5 минут."
       end
     end
 
@@ -132,7 +134,7 @@ module DiscordBot
       end
 
       @mafia[ id ][ 'users' ][ u ] = e.user.name
-      e.user.pm "Ваша заявка на участие принята. Чтобы отменить заявку, используйте команду !mafia_leave."
+      e.user.pm "Ваша заявка на участие принята. Чтобы отменить заявку, используйте команду !mafia_leave в чате того сервера, где подали заявку."
     end
 
     def mafia_leave( e )

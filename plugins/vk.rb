@@ -45,9 +45,9 @@ module DiscordBot
     end
 
     def get_data_from_group( g, d )
-      r =  JSON.parse(
+      r = JSON.parse(
         HTTParty.get(
-          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=1&offset=1&extended=1",
+          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=1&offset=1&extended=1&access_token=" + @config[ 'groups' ][ 'access_token' ],
           :verify => false
         ).body,
         :symbolize_names => true
@@ -99,7 +99,7 @@ module DiscordBot
       end
 
       d[ 'servers' ].each do | serv |
-        if @channels[ serv ][ 'news' ].nil? then next; end
+        if @channels[ serv ].nil? or @channels[ serv ][ 'news' ].nil? then next; end
         @bot.send_message( @channels[ serv ][ 'news' ], '', false, emb )
       end
 

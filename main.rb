@@ -14,7 +14,7 @@ module DiscordBot
           'prefix' => '!', 
           'owner' => 0,
           'wikies' => {},
-          'groups' => {},
+          'groups' => { 'access_token': '' },
           'ignored' => [],
           'blacklisted' => [],
           'exclude welcome' => []
@@ -86,11 +86,6 @@ module DiscordBot
 
         if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
           c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
-
-          g = s.roles.find { |r| r.name == "Новички" }
-          if !g.nil? and can_do( s, 'manage_roles' ) then
-            e.user.add_role( g )
-          end
         end
       end
 

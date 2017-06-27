@@ -152,7 +152,7 @@ module DiscordBot
         end
 
         data[ 'servers' ].each do | id |
-          if @channels[ id ][ 'recentchanges' ].nil? then next; end
+          if @channels[ id ].nil? or @channels[ id ][ 'recentchanges' ].nil? then next; end
           @bot.send_message( @channels[ id ][ 'recentchanges' ], '', false, emb )
         end
         sleep 1
