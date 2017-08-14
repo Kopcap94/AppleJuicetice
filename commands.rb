@@ -33,12 +33,12 @@ module DiscordBot
         usage: "Требуется упомянуть цель: !avatar @kopcap"
       ) do | e, u | avatar( e, u ) end
 
-      @bot.command(
-        :user,
-        min_args: 1,
-        description: "Выводит информация об участнике на Фэндоме.",
-        usage: "Требуется указать ник участника: !user Kopcap94"
-      ) do | e, *args | wiki_user( e, args.join( " " ) ) end
+      #@bot.command(
+      #  :user,
+      #  min_args: 1,
+      #  description: "Выводит информация об участнике на Фэндоме.",
+      #  usage: "Требуется указать ник участника: !user Kopcap94"
+      #) do | e, *args | wiki_user( e, args.join( " " ) ) end
 
       @bot.command(
         :exclude_welcome,

@@ -85,7 +85,7 @@ module DiscordBot
         c = e.server.general_channel
 
         if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
-          c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, предоставьте ссылку на свой профиль в Фэндоме, чтобы администраторы могли добавить вас в группу."
+          c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, ознакомьтесь с правилами данного дискорд-сервера."
         end
       end
 
