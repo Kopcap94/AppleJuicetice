@@ -134,7 +134,7 @@ module DiscordBot
             title = obj[ :logaction ] == 'upload' ? "Загружен файл" : "Перезаписан файл"
             value = obj[ :title ].gsub( /^[^:]+:/, '' )
           else
-			puts "Отсутствует: #{ obj[ :logaction ] }"
+		    puts "Отсутствует: #{ obj[ :logaction ] }"
             next
           end
 

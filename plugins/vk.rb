@@ -25,7 +25,7 @@ module DiscordBot
     def for_init
       Thread.new {
         @config[ 'groups' ].each do |k, v|
-		  if k == 'access_token' then next; end
+	      if k == 'access_token' then next; end
 
           do_new_thread( k, v )
           sleep 20
