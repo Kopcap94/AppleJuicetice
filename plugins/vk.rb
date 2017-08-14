@@ -25,6 +25,8 @@ module DiscordBot
     def for_init
       Thread.new {
         @config[ 'groups' ].each do |k, v|
+	      if k == 'access_token' then next; end
+
           do_new_thread( k, v )
           sleep 20
         end
@@ -99,8 +101,8 @@ module DiscordBot
       end
 
       d[ 'servers' ].each do | serv |
-        if @channels[ serv ].nil? or @channels[ serv ][ 'news' ].nil? then next; end
-        @bot.send_message( @channels[ serv ][ 'news' ], '', false, emb )
+        if @channels[ serv ].nil? or @channels[ serv ][ 'vk-news' ].nil? then next; end
+        @bot.send_message( @channels[ serv ][ 'vk-news' ], '', false, emb )
       end
 
       @config[ 'groups' ][ g ][ 'id' ] = resp[ :id ]
