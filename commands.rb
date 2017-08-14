@@ -33,13 +33,6 @@ module DiscordBot
         usage: "Требуется упомянуть цель: !avatar @kopcap"
       ) do | e, u | avatar( e, u ) end
 
-      #@bot.command(
-      #  :user,
-      #  min_args: 1,
-      #  description: "Выводит информация об участнике на Фэндоме.",
-      #  usage: "Требуется указать ник участника: !user Kopcap94"
-      #) do | e, *args | wiki_user( e, args.join( " " ) ) end
-
       @bot.command(
         :exclude_welcome,
         permission_level: 2,
@@ -136,37 +129,6 @@ module DiscordBot
       end
 
       e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u[ 1 ].avatar_id }.jpg?size=512"
-    end
-
-    def wiki_user( e, u )
-      us = JSON.parse(
-        HTTParty.get(
-          URI.encode( "http://community.wikia.com/api.php?action=query&format=json&list=users&usprop=registration|editcount&ususers=#{ u }" ),
-          :verify => false
-        ).body,
-        :symbolize_names => true
-      )[ :query ][ :users ][ 0 ]
-      
-      if !us[ :missing ].nil? then
-        e.respond "Участника #{ u } не существует."
-        return
-      end
-
-      avatar = JSON.parse(
-        HTTParty.get(
-          URI.encode( "http://www.wikia.com/api/v1/User/Details/?ids=#{ us[ :userid ] }" ),
-          :verify => false
-        ).body,
-        :symbolize_names => true
-      )[ :items ].first[ :avatar ]
-
-      e.channel.send_embed do | emb |
-        emb.color = "#4A804C"
-        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "#{ u }", url: "http://community.wikia.com/wiki/User:#{ u.gsub( /\s/, "_" ) }" )
-        emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ avatar }#.png" )
-        emb.add_field( name: "Регистрация", value: "#{ us[ :registration ].nil? ? "отключён" : us[ :registration ].gsub( /[TZ]/, " " ) }", inline: true )
-        emb.add_field( name: "Кол-во правок", value: us[ :editcount ], inline: true )
-      end
     end
 
     def exclude( e )
