@@ -17,7 +17,7 @@ module DiscordBot
         permission_level: 2,
         min_args: 1,
         description: "Добавляет вики в список патрулируемых и выводит правки в канал #recentchanges.",
-        usage: "!add_wiki ru.mlp",
+        usage: "!add_wiki ru.community",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w | add_wiki( e, w ) end
 
@@ -26,7 +26,7 @@ module DiscordBot
         permission_level: 2,
         min_args: 2,
         description: "Изменяет переменную отображения загрузок (uploads) и логов (logs).",
-        usage: "!attr_wiki ru.mlp logs",
+        usage: "!attr_wiki ru.community logs",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w, t | attr_wiki( e, w, t ) end
     end
@@ -134,6 +134,7 @@ module DiscordBot
             title = obj[ :logaction ] == 'upload' ? "Загружен файл" : "Перезаписан файл"
             value = obj[ :title ].gsub( /^[^:]+:/, '' )
           else
+			puts "Отсутствует: #{ obj[ :logaction ] }"
             next
           end
 
