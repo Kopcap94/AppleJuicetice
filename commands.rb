@@ -34,26 +34,32 @@ module DiscordBot
       ) do | e, u | avatar( e, u ) end
 
       @bot.command(
-        :exclude_welcome,
+        :ew,
         permission_level: 2,
         description: "Данная команда позволяет исключить сообщения о присоединении и выходе участников на/с сервера.",
-        usage: "!exclude_welcome",
+        usage: "!ew",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e | exclude( e ) end
 
       @bot.command(
         :bl,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Добавляет сервер в чёрный список.",
         usage: "!bl <id>",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, id | blacklist( e, id ) end
 
       @bot.command(
+        :drop,
+        permission_level: 2,
+        description: "С помощью данной команды бот покинет ваш сервер.",
+        usage: "!drop",
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
+      ) do | e, id | drop( e ) end
+
+      @bot.command(
         :ign,
         min_args: 1,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Игнорирует пользователя.",
         usage: "!ign @kopcap",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, u | ignore( e, u, true ) end
@@ -62,7 +68,6 @@ module DiscordBot
         :unign,
         min_args: 1,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Убирает игнор с пользователя.",
         usage: "!unign @kopcap",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, u | ignore( e, u, false ) end
@@ -71,7 +76,6 @@ module DiscordBot
         :eval,
         min_args: 1,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота.",
         usage: "!eval <код для выполнения>",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c | code_eval( e, c.join( ' ' ) ) end
@@ -79,7 +83,6 @@ module DiscordBot
       @bot.command(
         :cls,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Отчищает экран консоли.",
         usage: "!cls",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c |
@@ -105,6 +108,8 @@ module DiscordBot
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'Список команд бота', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 
         @bot.commands.each do | k, v |
+          if v.attributes[ :permission_level ] == 3 or ( !v.attributes[ :parameters ].nil? and v.attributes[ :parameters ][ :hidden ] ) then next; end
+
           text = "**Уровень доступа:** #{v.attributes[ :permission_level ] != 2 ? "все участники" : "модераторы и администраторы"}\n**Описание:** #{ v.attributes[ :description ] }\n**Использование:** #{ v.attributes[ :usage ] }"
           emb.add_field( name: "#{ @bot.prefix }#{ v.name }", value: text )
         end
@@ -163,6 +168,12 @@ module DiscordBot
         e.respond "В данный момент я нахожусь на том сервере. Выхожу..."
         @bot.servers[ id ].leave
       end
+    end
+
+    def drop( e )
+      if e.channel.pm? then return; end
+      e.respond "Покидаю сервер."
+      @bot.servers[ e.server.id ].leave
     end
 
     def nuke( e, a )
