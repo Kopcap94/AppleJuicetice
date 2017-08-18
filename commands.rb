@@ -34,10 +34,10 @@ module DiscordBot
       ) do | e, u | avatar( e, u ) end
 
       @bot.command(
-        :exclude_welcome,
+        :ew,
         permission_level: 2,
         description: "Данная команда позволяет исключить сообщения о присоединении и выходе участников на/с сервера.",
-        usage: "!exclude_welcome",
+        usage: "!ew",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e | exclude( e ) end
 
@@ -47,6 +47,14 @@ module DiscordBot
         usage: "!bl <id>",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, id | blacklist( e, id ) end
+
+      @bot.command(
+        :drop,
+        permission_level: 2,
+        description: "С помощью данной команды бот покинет ваш сервер.",
+        usage: "!drop",
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
+      ) do | e, id | drop( e ) end
 
       @bot.command(
         :ign,
@@ -100,7 +108,7 @@ module DiscordBot
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'Список команд бота', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 
         @bot.commands.each do | k, v |
-          if v.attributes[ :permission_level ] == 3 or ( !v.attributes[ :permission_level ][ :parameters ].nil? and v.attributes[ :permission_level ][ :parameters ][ :hidden ] ) then next; end
+          if v.attributes[ :permission_level ] == 3 or ( !v.attributes[ :parameters ].nil? and v.attributes[ :parameters ][ :hidden ] ) then next; end
 
           text = "**Уровень доступа:** #{v.attributes[ :permission_level ] != 2 ? "все участники" : "модераторы и администраторы"}\n**Описание:** #{ v.attributes[ :description ] }\n**Использование:** #{ v.attributes[ :usage ] }"
           emb.add_field( name: "#{ @bot.prefix }#{ v.name }", value: text )
@@ -160,6 +168,12 @@ module DiscordBot
         e.respond "В данный момент я нахожусь на том сервере. Выхожу..."
         @bot.servers[ id ].leave
       end
+    end
+
+    def drop( e )
+      if e.channel.pm? then return; end
+      e.respond "Покидаю сервер."
+      @bot.servers[ e.server.id ].leave
     end
 
     def nuke( e, a )
