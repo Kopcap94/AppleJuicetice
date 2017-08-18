@@ -44,7 +44,6 @@ module DiscordBot
       @bot.command(
         :bl,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Добавляет сервер в чёрный список.",
         usage: "!bl <id>",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, id | blacklist( e, id ) end
@@ -53,7 +52,6 @@ module DiscordBot
         :ign,
         min_args: 1,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Игнорирует пользователя.",
         usage: "!ign @kopcap",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, u | ignore( e, u, true ) end
@@ -62,7 +60,6 @@ module DiscordBot
         :unign,
         min_args: 1,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Убирает игнор с пользователя.",
         usage: "!unign @kopcap",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, u | ignore( e, u, false ) end
@@ -71,7 +68,6 @@ module DiscordBot
         :eval,
         min_args: 1,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота.",
         usage: "!eval <код для выполнения>",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c | code_eval( e, c.join( ' ' ) ) end
@@ -79,7 +75,6 @@ module DiscordBot
       @bot.command(
         :cls,
         permission_level: 3,
-        description: "Данная команда доступна только хозяину бота. Отчищает экран консоли.",
         usage: "!cls",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c |
@@ -105,6 +100,8 @@ module DiscordBot
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'Список команд бота', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 
         @bot.commands.each do | k, v |
+          if v.attributes[ :permission_level ] == 3 or ( !v.attributes[ :permission_level ][ :parameters ].nil? and v.attributes[ :permission_level ][ :parameters ][ :hidden ] ) then next; end
+
           text = "**Уровень доступа:** #{v.attributes[ :permission_level ] != 2 ? "все участники" : "модераторы и администраторы"}\n**Описание:** #{ v.attributes[ :description ] }\n**Использование:** #{ v.attributes[ :usage ] }"
           emb.add_field( name: "#{ @bot.prefix }#{ v.name }", value: text )
         end
