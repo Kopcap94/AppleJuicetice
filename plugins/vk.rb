@@ -25,7 +25,7 @@ module DiscordBot
     def for_init
       Thread.new {
         @config[ 'groups' ].each do |k, v|
-	      if k == 'access_token' then next; end
+          if k == 'access_token' then next; end
 
           do_new_thread( k, v )
           sleep 20
@@ -110,8 +110,17 @@ module DiscordBot
     end
 
     def add_group( e, g )
-      if g !~ /^-?\d+$/ then
+      if e.channel.pm? then 
+        return;
+      elsif g !~ /^-?\d+$/ then
         e.respond "Неправильно указан ID группы. Пример: -223994."
+        return
+      end
+
+      id = e.server.id
+
+      if @channels[ id ][ 'vk-news' ].nil? then
+        e.respond "Отсутствует канал для новостей. Чтобы воспользоваться данной командой, создайте канал с названием 'vk-news'."
         return
       end
 
@@ -124,7 +133,7 @@ module DiscordBot
         @config[ 'groups' ][ g.to_s ] = { 'id' => "", 'servers' => [] }
       end
 
-      @config[ 'groups' ][ g.to_s ][ 'servers' ].push( e.server.id )
+      @config[ 'groups' ][ g.to_s ][ 'servers' ].push( id )
       @client.save_config
 
       e.respond "<@#{ e.user.id }>, ID группы #{ g } добавлен в список групп для новостей."
