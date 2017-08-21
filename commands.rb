@@ -54,7 +54,7 @@ module DiscordBot
         description: "С помощью данной команды бот покинет ваш сервер.",
         usage: "!drop",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e, id | drop( e ) end
+      ) do | e | drop( e ) end
 
       @bot.command(
         :ign,
@@ -86,7 +86,7 @@ module DiscordBot
         usage: "!cls",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, *c |
-        system "cls"
+        Gem.win_platform? ? ( system "cls" ) : ( system "clear" )
         e.message.create_reaction "\u2611"
       end
 
@@ -98,6 +98,11 @@ module DiscordBot
         usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, i | nuke( e, i ) end
+
+      @bot.command(
+	:die,
+	permission_level: 3,
+      ) do | e | die( e ) end
     end
 
     def help( e, s )
@@ -118,6 +123,11 @@ module DiscordBot
       if !e.channel.pm? and s then
         e.message.create_reaction "\u2611"
       end
+    end
+
+    def die( e )
+      e.respond "Exiting..."
+      exit
     end
 
     def avatar( e, a )

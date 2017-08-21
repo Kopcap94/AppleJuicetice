@@ -38,7 +38,7 @@ module DiscordBot
 
     def start
       @bot.ready do | e |
-        @bot.update_status( 'Discord Ruby', '!help or !get_help', nil )
+        @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
         update_info
