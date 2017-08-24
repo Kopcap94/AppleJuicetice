@@ -100,9 +100,17 @@ module DiscordBot
       ) do | e, i | nuke( e, i ) end
 
       @bot.command(
-	:die,
-	permission_level: 3,
+        :die,
+        permission_level: 3
       ) do | e | die( e ) end
+
+      @bot.command(
+        :online,
+        min_args: 1,
+        description: "Определяет информацию о доступности сервера STEAM.",
+        usage: "!online 192.168.0.1:27015"
+      ) do | e, ip | check_online( e, ip.to_s ) end
+      
     end
 
     def help( e, s )
@@ -126,7 +134,7 @@ module DiscordBot
     end
 
     def die( e )
-      e.respond "Exiting..."
+      e.respond "Перезапускаюсь."
       exit
     end
 
@@ -242,6 +250,57 @@ module DiscordBot
 
       @c.save_config
       e.respond "Участник #{ @bot.users[ u ].username } #{ s ? "добавлен в игнор" : "убран из игнора" }."
+    end
+
+    def check_online( e, a )
+      if a =~ /^@\d$/ then
+        o = {
+          '@1' => {
+            'ip' => '193.70.6.12',
+            'port' => '2546'
+          },
+          '@2' => {
+            'ip' => '193.70.6.12',
+            'port' => '2746'
+          }
+        }
+
+        if o[ a ].nil? then
+          e.respond "Неправильный номер сервера. Доступные номера: #{ o.keys.join( ', ' ) }."
+          return
+        end
+
+        ip = o[ a ][ 'ip' ]
+        port = o[ a ][ 'port' ]
+      elsif a =~ /^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}:\d{1,5}$/ then
+        a = a.split( ':' )
+        ip = a[ 0 ]
+        port = a[ 1 ].to_i + 1
+      else
+        e.respond "Неправильный формат адреса. Пример: 192.168.0.1:27015"
+        return
+      end
+
+      d = JSON.parse(
+        HTTParty.post(
+          "http://dz.launcher.eu/check",
+          :body => { 'serverip' => "#{ ip }:#{ port }" }
+        ).body,
+        :symbolize_names => true
+      )
+
+      if d[ :status ] != "success" then
+        e.respond "Сервер выключен или ушёл на рестарт."
+        return
+      end
+
+      s = d[ :server ]
+
+      e.channel.send_embed do | emb |
+        emb.color = "#4A804C"
+        emb.title = s[ :name ]
+        emb.description = "**Онлайн:** #{ s[ :players ] }/#{ s[ :playersmax ] }\n**Карта:** #{ s[ :map ] }"
+      end
     end
   end
 end

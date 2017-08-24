@@ -38,12 +38,13 @@ module DiscordBot
 
     def start
       @bot.ready do | e |
-        @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
+        @bot.update_status( 'Discord Ruby', 'Loading...', nil )
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
         update_info
         ignore_users
         register_modules
+	@bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
       end
     
       @bot.message do | e |
