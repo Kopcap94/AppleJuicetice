@@ -4,7 +4,7 @@ require 'httparty'
 
 module DiscordBot
   class Main
-    attr_accessor :bot, :channels, :config
+    attr_accessor :bot, :channels, :config, :thr
 
     def initialize
       unless File.exists?( 'cfg.json' )
@@ -32,6 +32,7 @@ module DiscordBot
         no_permission_message: "Недостаточно прав, чтобы выполнить действие."
       )
       @channels = {}
+      @thr = []
       @cfg_mutex = Mutex.new
       @error_log = Mutex.new
     end
@@ -44,7 +45,8 @@ module DiscordBot
         update_info
         ignore_users
         register_modules
-	@bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
+
+        @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
       end
     
       @bot.message do | e |
@@ -129,9 +131,7 @@ module DiscordBot
       Thread.new {
         DiscordBot.constants.select do | c |
           if DiscordBot.const_get( c ).is_a? Class then
-            if c.to_s == "Main" then
-              next
-            end
+            if c.to_s == "Main" then next; end
 
             m = DiscordBot.const_get( c ).new( self )
 

@@ -7,6 +7,7 @@ module DiscordBot
       @bot = client.bot
       @channels = client.channels
       @config = client.config
+      @thr = client.thr
 
       for_init
     end
@@ -24,29 +25,29 @@ module DiscordBot
 
     def for_init
       Thread.new {
-        @config[ 'groups' ].each do |k, v|
+        @config[ 'groups' ].each do | k, v |
           if k == 'access_token' then next; end
 
-          do_new_thread( k, v )
+          do_new_thread( k )
           sleep 20
         end
       }
     end
 
-    def do_new_thread( t, d )
-      Thread.new {
+    def do_new_thread( t )
+      @thr << Thread.new {
         begin
-          get_data_from_group( t, d )
+          get_data_from_group( t )
         rescue => err
           @client.error_log( err, "VK" )
         end
 
         sleep 300
-        do_new_thread( t, @config[ 'groups' ][ t ] )
+        do_new_thread( t )
       }
     end
 
-    def get_data_from_group( g, d )
+    def get_data_from_group( g )
       r = JSON.parse(
         HTTParty.get(
           "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=1&offset=1&extended=1&access_token=" + @config[ 'groups' ][ 'access_token' ],
@@ -58,11 +59,16 @@ module DiscordBot
       if r.nil? then
         return
       end
+
       resp = r[ :wall ][ 1 ]
+      d = @config[ 'groups' ][ g ]
 
       if d[ 'id' ] == resp[ :id ] then
         return
       end
+
+      @config[ 'groups' ][ g ][ 'id' ] = resp[ :id ]
+      @client.save_config
 
       emb = Discordrb::Webhooks::Embed.new
       emb.color = "#507299"
@@ -104,9 +110,6 @@ module DiscordBot
         if @channels[ serv ].nil? or @channels[ serv ][ 'vk-news' ].nil? then next; end
         @bot.send_message( @channels[ serv ][ 'vk-news' ], '', false, emb )
       end
-
-      @config[ 'groups' ][ g ][ 'id' ] = resp[ :id ]
-      @client.save_config
     end
 
     def add_group( e, g )

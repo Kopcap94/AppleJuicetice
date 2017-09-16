@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 require_relative './main'
 require_relative './commands'
 require_relative './plugins/vk'
