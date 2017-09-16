@@ -7,6 +7,7 @@ module DiscordBot
       @bot = client.bot
       @channels = client.channels
       @config = client.config
+      @thr = client.thr
 
       for_init
     end
@@ -18,9 +19,6 @@ module DiscordBot
         min_args: 1,
         description: "Добавляет вики в список патрулируемых и выводит правки в канал #recentchanges.",
         usage: "!add_wiki ru.community",
-        parameters: {
-          hidden: true
-        },
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w | add_wiki( e, w ) end
 
@@ -30,35 +28,32 @@ module DiscordBot
         min_args: 2,
         description: "Изменяет переменную отображения загрузок (uploads) и логов (logs).",
         usage: "!attr_wiki ru.community logs",
-        parameters: {
-          hidden: true
-        },
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w, t | attr_wiki( e, w, t ) end
     end
 
     def for_init
       Thread.new {
-        @config[ 'wikies' ].each do | w, r |
-          init_checking( w, r )
+        @config[ 'wikies' ].each do | w, d |
+          init_checking( w )
         end
       }
     end
     
-    def init_checking( w, d )
-      Thread.new {
+    def init_checking( w )
+      @thr << Thread.new {
         begin
-          get_data_from_api( w, d )
+          get_data_from_api( w )
         rescue => err
           @c.error_log( err, "WIKI" )
         end
 
         sleep 60
-        init_checking( w, @config[ 'wikies' ][ w ] )
+        init_checking( w )
       }
     end
 
-    def get_data_from_api( w, data )
+    def get_data_from_api( w )
       d =  JSON.parse(
         HTTParty.get(
           "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
@@ -67,8 +62,9 @@ module DiscordBot
         :symbolize_names => true
       )[ :query ][ :recentchanges ]
 
+      data = @config[ 'wikies' ][ w ]
       rcid = data[ 'rcid' ]
-      show_uploads = @config[ 'show_uploads' ]
+      show_uploads = data[ 'uploads' ]
       last_rcid = d[ 0 ][ :rcid ]
 
       if rcid == 0 then
@@ -80,12 +76,15 @@ module DiscordBot
       if last_rcid <= rcid then
         return
       end
+      
+      @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
+      @c.save_config
 
       d.reverse.each do | obj |
         if( obj[ :rcid ] <= rcid ) or
           ( obj[ :revid ] == 0 and !data[ 'logs' ] ) or
           ( obj[ :type ] == 'log' and obj[ :logtype ] == 'upload' and !data[ 'uploads' ] ) or
-          ( obj[ :user ] == 'WikiaBot' or obj[ :user ] == 'Wikia' )
+          ( [ 'Wikia', 'WikiaBot', 'FANDOM' ].include? obj[ :user ] )
           next
         end
 
@@ -159,22 +158,25 @@ module DiscordBot
         end
 
         data[ 'servers' ].each do | id |
-          if @channels[ id ].nil? or @channels[ id ][ 'recentchanges' ].nil? then next; end
-          @bot.send_message( @channels[ id ][ 'recentchanges' ], '', false, emb )
+          if @channels[ id ].nil? then next;
+          elsif @channels[ id ][ 'recentchanges' ].nil? and @channels[ id ][ 'wiki-activity' ].nil? then next;
+          elsif @channels[ id ][ 'recentchanges' ].nil? then
+            channel = @channels[ id ][ 'wiki-activity' ]
+          else
+            channel = @channels[ id ][ 'recentchanges' ]
+          end
+          @bot.send_message( channel, '', false, emb )
         end
         sleep 1
       end
-
-      @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
-      @c.save_config
     end
 
     def add_wiki( e, w )
       id = e.server.id
       w = w.gsub( /(http:\/\/|.wikia.com.*)/, '' )
 
-      if @channels[ id ][ 'recentchanges' ].nil? then
-        e.respond "<@#{ e.user.id }>, на сервере отсутствует канал #recentchanges, чтобы публиковать туда данные о свежих правках с вики. Пожалуйста, создайте канал и попробуйте снова."
+      if @channels[ id ][ 'recentchanges' ].nil? and @channels[ id ][ 'wiki-activity' ].nil? then
+        e.respond "<@#{ e.user.id }>, на сервере отсутствует канал #recentchanges/#wiki-activity, чтобы публиковать туда данные о свежих правках с вики. Пожалуйста, создайте канал и попробуйте снова."
         return
       end
 
@@ -193,7 +195,7 @@ module DiscordBot
       end
 
       @c.save_config
-      init_checking( w, @config[ 'wikies' ][ w ] )
+      init_checking( w )
       e.respond "<@#{ e.user.id }>, #{ w } добавлен в список для патрулирования."
     end
 
