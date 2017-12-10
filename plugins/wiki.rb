@@ -33,23 +33,23 @@ module DiscordBot
     end
 
     def for_init
-      Thread.new {
+      thr = []
+
+      @thr[ 'wiki' ] = Thread.new {
         @config[ 'wikies' ].each do | w, d |
-          init_checking( w )
-        end
-      }
-    end
-    
-    def init_checking( w )
-      @thr << Thread.new {
-        begin
-          get_data_from_api( w )
-        rescue => err
-          @c.error_log( err, "WIKI" )
+          thr << Thread.new {
+            begin
+              get_data_from_api( w )
+            rescue => err
+              @c.error_log( err, "WIKI" )
+            end
+          }
+
+          sleep 60
         end
 
-        sleep 60
-        init_checking( w )
+        thr.each { | t | t.join }
+        for_init
       }
     end
 
@@ -165,6 +165,7 @@ module DiscordBot
           else
             channel = @channels[ id ][ 'recentchanges' ]
           end
+
           @bot.send_message( channel, '', false, emb )
         end
         sleep 1

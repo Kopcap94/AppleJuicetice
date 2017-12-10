@@ -24,26 +24,25 @@ module DiscordBot
     end
 
     def for_init
-      Thread.new {
+      thr = []
+
+      @thr[ 'vk' ] = Thread.new {
         @config[ 'groups' ].each do | k, v |
           if k == 'access_token' then next; end
 
-          do_new_thread( k )
+          thr << Thread.new {
+            begin
+              get_data_from_group( k )
+            rescue => err
+              @client.error_log( err, "VK" )
+            end
+          }
+
           sleep 20
         end
-      }
-    end
 
-    def do_new_thread( t )
-      @thr << Thread.new {
-        begin
-          get_data_from_group( t )
-        rescue => err
-          @client.error_log( err, "VK" )
-        end
-
-        sleep 300
-        do_new_thread( t )
+        thr.each { | t | t.join }
+        for_init
       }
     end
 
@@ -63,7 +62,7 @@ module DiscordBot
       resp = r[ :wall ][ 1 ]
       d = @config[ 'groups' ][ g ]
 
-      if d[ 'id' ] == resp[ :id ] then
+      if d[ 'id' ] >= resp[ :id ] then
         return
       end
 
