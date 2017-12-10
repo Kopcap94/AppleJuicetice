@@ -39,7 +39,7 @@ module DiscordBot
 
     def start
       @bot.ready do | e |
-	      puts "Ready!"
+        puts "Ready!"
         @bot.update_status( 'Discord Ruby', 'Loading...', nil )
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
@@ -47,7 +47,7 @@ module DiscordBot
         ignore_users
         register_modules
 
-	      @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
+        @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
       end
     
       @bot.message do | e |
@@ -64,7 +64,7 @@ module DiscordBot
       end
 
       @bot.channel_update do | e |
-	      if !e.channel.pm? then
+        if !e.channel.pm? then
           update_info
         end
       end
