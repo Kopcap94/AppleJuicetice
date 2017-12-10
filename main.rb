@@ -32,13 +32,14 @@ module DiscordBot
         no_permission_message: "Недостаточно прав, чтобы выполнить действие."
       )
       @channels = {}
-      @thr = []
+      @thr = {}
       @cfg_mutex = Mutex.new
       @error_log = Mutex.new
     end
 
     def start
       @bot.ready do | e |
+        puts "Ready!"
         @bot.update_status( 'Discord Ruby', 'Loading...', nil )
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
@@ -62,6 +63,12 @@ module DiscordBot
         end
       end
 
+      @bot.channel_update do | e |
+        if !e.channel.pm? then
+          update_info
+        end
+      end
+
       @bot.channel_delete do | e |
         update_info
       end
@@ -76,6 +83,10 @@ module DiscordBot
           next
         end
 
+        update_info
+      end
+
+      @bot.server_update do | e |
         update_info
       end
 
@@ -131,7 +142,9 @@ module DiscordBot
       Thread.new {
         DiscordBot.constants.select do | c |
           if DiscordBot.const_get( c ).is_a? Class then
-            if c.to_s == "Main" then next; end
+            if c.to_s == "Main" then
+              next
+            end
 
             m = DiscordBot.const_get( c ).new( self )
 

@@ -127,7 +127,7 @@ module DiscordBot
     end
 
     def die( e )
-      @c.thr.each {| thr | thr.kill }
+      @c.thr.each {| k, thr | thr.kill }
       e.respond "Перезапускаюсь."
       exit
     end
