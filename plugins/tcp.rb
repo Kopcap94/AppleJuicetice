@@ -22,9 +22,11 @@ module DiscordBot
       loop {
         t = Thread.start( s.accept ) do | c |
           msg = c.gets.chomp.to_s.force_encoding( 'UTF-8' )
+ 
+          channel = @channels[ 285482504817868800 ][ 'ponyville' ]
 
           begin
-            @bot.send_message( 383292078601535491, msg )
+            @bot.send_message( channel, msg )
           rescue => err
             puts err.inspect
           end

@@ -20,7 +20,14 @@ module DiscordBot
         description: "Добавляет вики в список патрулируемых и выводит правки в канал #recentchanges.",
         usage: "!add_wiki ru.community",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e, w | add_wiki( e, w ) end
+      ) do | e, w | 
+        begin
+          add_wiki( e, w )
+        rescue => err
+          puts "[add_wiki]: #{ err }"
+          e.respond "При попытке добавления произошла ошибка. Возможно, файл конфигурации сейчас перегружен. Попробуйте позднее."
+        end
+      end
 
       @bot.command(
         :attr_wiki,
@@ -36,7 +43,7 @@ module DiscordBot
       thr = []
 
       @thr[ 'wiki' ] = Thread.new {
-        @config[ 'wikies' ].each do | w, d |
+        @config[ 'wikies' ].clone.each do | w, d |
           thr << Thread.new {
             begin
               get_data_from_api( w )
@@ -45,10 +52,12 @@ module DiscordBot
             end
           }
 
-          sleep 60
+          sleep 5
         end
+ 
+        sleep 60
 
-        thr.each { | t | t.join }
+        thr.each { |t| t.join }
         for_init
       }
     end
@@ -154,7 +163,8 @@ module DiscordBot
 
         emb.add_field( name: "Выполнил", value: obj[ :user ], inline: true )
         if obj[ :comment ].gsub( /^\s+/, '' ) != "" then
-          emb.add_field( name: "Описание", value: "#{ obj[ :comment ][ 0..100 ] }" )
+          comment = obj[ :comment ].gsub( /(@(here|everyone)|<[@!#$]?&?\d*>)/, '[ yolo ]' )
+          emb.add_field( name: "Описание", value: "#{ comment[ 0..100 ] }" )
         end
 
         data[ 'servers' ].each do | id |
@@ -165,7 +175,6 @@ module DiscordBot
           else
             channel = @channels[ id ][ 'recentchanges' ]
           end
-
           @bot.send_message( channel, '', false, emb )
         end
         sleep 1
@@ -196,7 +205,7 @@ module DiscordBot
       end
 
       @c.save_config
-      init_checking( w )
+
       e.respond "<@#{ e.user.id }>, #{ w } добавлен в список для патрулирования."
     end
 

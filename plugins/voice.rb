@@ -14,7 +14,7 @@ module DiscordBot
         min_args: 1,
         description: "Пригласить бота в голосовой канал. Требуется указать название канала.",
         usage: "!vjoin VoiceChannel"
-      ) do | e, *vc | join( e, vc.join( " " ).to_s ) end
+      ) do | e, *vс | join( e, vс.join( " " ).to_s ) end
 
       @bot.command(
         :vplay,
@@ -86,8 +86,8 @@ module DiscordBot
 
       if ( s ) then
         if ( t ) then
-          @bot.voice( e.server.id ).stop_playing
-          e.respond "Воспроизведение остановлено."
+	        @bot.voice( e.server.id ).stop_playing
+	        e.respond "Воспроизведение остановлено."
         else
           @bot.voice( id ).pause
           e.respond "Воспроизведение поставлено на паузу."

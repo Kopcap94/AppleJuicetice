@@ -20,14 +20,21 @@ module DiscordBot
         description: "Добавляет ID группы VK в список патрулируемых.",
         usage: "Требует ID группы: !add_group -2000",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e, g | add_group( e, g ) end
+      ) do | e, g |
+        begin
+          add_group( e, g )
+        rescue => err
+          puts "[add vk] #{ err }"
+          e.respond "При попытке добавления группы произошла ошибка. Возможно, файл конфигураций занят. Попробуйте позже."
+        end
+      end
     end
 
     def for_init
       thr = []
 
       @thr[ 'vk' ] = Thread.new {
-        @config[ 'groups' ].each do | k, v |
+        @config[ 'groups' ].clone.each do | k, v |
           if k == 'access_token' then next; end
 
           thr << Thread.new {
