@@ -66,8 +66,6 @@ module DiscordBot
           s.leave
           next
         end
-
-        update_info
       end
 
       @bot.member_join do | e |
@@ -110,29 +108,9 @@ module DiscordBot
         ]
         e.respond "<@#{ e.user.id }>, #{ a.sample }"
       end
-      
-      @bot.channel_create do | e |
-        if !e.channel.pm? then
-          update_info
-        end
-      end
 
-      @bot.channel_update do | e |
-        if !e.channel.pm? then
-          update_info
-        end
-      end
-
-      @bot.channel_delete do | e |
-        update_info
-      end
-
-      @bot.server_update do | e |
-        update_info
-      end
-
-      @bot.server_delete do | e |
-        update_info
+      @bot.raw do | e |
+	update_info
       end
 
       @bot.run
