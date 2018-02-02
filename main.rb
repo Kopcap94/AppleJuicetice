@@ -39,37 +39,22 @@ module DiscordBot
 
     def start
       @bot.ready do | e |
-	puts "Ready!"
+        puts "Ready!"
         @bot.update_status( 'Discord Ruby', 'Loading...', nil )
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
         update_info
         ignore_users
         register_modules
-	@bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
+
+        @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
       end
     
-      @bot.message do | e |
-        if e.channel.pm? and e.user.id != @config[ 'owner' ] then
+      @bot.pm do | e |
+        if e.user.id != @config[ 'owner' ] then
           b = e.message.timestamp.to_s.gsub( /\s\+\d+$/, '' ) + " #{ e.user.name } [#{ e.user.id }]: "
           File.open( 'pm.log', 'a' ) { |f| f.write( b + e.message.content.split( "\n" ).join( "\n" + b ) + "\n" ) }
         end
-      end
-
-      @bot.channel_create do | e |
-        if !e.channel.pm? then
-          update_info
-        end
-      end
-
-      @bot.channel_update do | e |
-	if !e.channel.pm? then
-          update_info
-        end
-      end
-
-      @bot.channel_delete do | e |
-        update_info
       end
 
       @bot.server_create do | e |
@@ -82,14 +67,6 @@ module DiscordBot
           next
         end
 
-        update_info
-      end
-
-      @bot.server_update do | e |
-        update_info
-      end
-
-      @bot.server_delete do | e |
         update_info
       end
 
@@ -133,6 +110,30 @@ module DiscordBot
         ]
         e.respond "<@#{ e.user.id }>, #{ a.sample }"
       end
+      
+      @bot.channel_create do | e |
+        if !e.channel.pm? then
+          update_info
+        end
+      end
+
+      @bot.channel_update do | e |
+        if !e.channel.pm? then
+          update_info
+        end
+      end
+
+      @bot.channel_delete do | e |
+        update_info
+      end
+
+      @bot.server_update do | e |
+        update_info
+      end
+
+      @bot.server_delete do | e |
+        update_info
+      end
 
       @bot.run
     end
@@ -156,7 +157,7 @@ module DiscordBot
     end
     
     def update_info
-      @bot.servers.each do |k, v|
+      @bot.servers.each do | k, v |
         @channels[ k ] = {}
         v.roles.each do | arr, i |
           perm = arr.permissions
