@@ -56,20 +56,24 @@ module DiscordBot
     def get_data_from_group( g )
       r = JSON.parse(
         HTTParty.get(
-          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=1&offset=1&extended=1&access_token=" + @config[ 'groups' ][ 'access_token' ],
-          :verify => false
+          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=2&offset=0&extended=1&access_token=" + @config[ 'groups' ][ 'access_token' ],
+          :verify_peer => false
         ).body,
         :symbolize_names => true
       )[ :response ]
 
-      if r.nil? then
+      if r.nil? or r[ :wall ].length == 1 then
         return
       end
 
       resp = r[ :wall ][ 1 ]
       d = @config[ 'groups' ][ g ]
 
-      if d[ 'id' ] >= resp[ :id ] then
+      if !resp[ :is_pinned ].nil? and d[ 'id' ] >= resp[ :id ] then
+        resp = r[ :wall ][ 2 ]
+      end
+
+      if resp.nil? or d[ 'id' ] >= resp[ :id ] then
         return
       end
 
@@ -139,7 +143,12 @@ module DiscordBot
       end
 
       if @config[ 'groups' ][ g.to_s ].nil? then
-        @config[ 'groups' ][ g.to_s ] = { 'id' => "", 'servers' => [] }
+        @config[ 'groups' ][ g.to_s ] = { 'id' => 0, 'servers' => [] }
+      end
+
+      if @config[ 'groups' ][ g.to_s ][ 'servers' ].include?( id ) then
+        e.respond "Данная группа уже числится в списке вашего сервера."
+        return
       end
 
       @config[ 'groups' ][ g.to_s ][ 'servers' ].push( id )

@@ -86,8 +86,8 @@ module DiscordBot
 
       if ( s ) then
         if ( t ) then
-	        @bot.voice( e.server.id ).stop_playing
-	        e.respond "Воспроизведение остановлено."
+          @bot.voice( e.server.id ).stop_playing
+          e.respond "Воспроизведение остановлено."
         else
           @bot.voice( id ).pause
           e.respond "Воспроизведение поставлено на паузу."
@@ -103,7 +103,7 @@ module DiscordBot
       v = v.to_f / 100
 
       if v < 0 or v > 2 then
-        e.respond "Неправильно указано значение. Громкость указывается в процентах и входить в диапазон от 0 до 200 включительно."
+        e.respond "Неправильно указано значение. Громкость указывается в процентах и должна находиться в диапазоне от 0 до 200 включительно."
         return
       end
 
