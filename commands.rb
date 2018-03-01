@@ -300,11 +300,11 @@ module DiscordBot
         emb.add_field( name: "Сервер", value: serv[ :details ][ :mission ] )
         emb.add_field( name: "Моды", value: serv[ :details ][ :mods ].map { | val | if ( /DayZ/ =~ val && /@/ !~ val ) then val end }.compact.join( "\n" ) )
 
-	      counter = 1
+        counter = 1
         arr.each_with_index do | list, ind |
           break if list.empty?
           emb.add_field( name: ( ind == 0 ) ? "[ Игроки ]":"#", value: list.map.with_index{ | p, i | "**#{ i + counter }**. #{ p }" }.join( "\n" ), inline: true )
-	        counter = counter + 10
+          counter = counter + 10
         end
 
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'DayZ Epoch RU 174', url: 'https://vk.com/epoch_ru174', icon_url: 'https://pp.userapi.com/c636518/v636518986/55ebe/C2exL6Yrhbs.jpg' )
