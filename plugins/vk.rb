@@ -8,6 +8,7 @@ module DiscordBot
       @channels = client.channels
       @config = client.config
       @thr = client.thr
+      @names = [ 'vk-news', 'вк-новости', 'новости' ]
 
       for_init
     end
@@ -45,7 +46,7 @@ module DiscordBot
             end
           }
 
-          sleep 20
+          sleep 60
         end
 
         thr.each { | t | t.join }
@@ -56,21 +57,21 @@ module DiscordBot
     def get_data_from_group( g )
       r = JSON.parse(
         HTTParty.get(
-          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=2&offset=0&extended=1&access_token=" + @config[ 'groups' ][ 'access_token' ],
+          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=2&offset=0&extended=1&v=5.7&access_token=" + @config[ 'groups' ][ 'access_token' ],
           :verify_peer => false
         ).body,
         :symbolize_names => true
       )[ :response ]
 
-      if r.nil? or r[ :wall ].length == 1 then
+      if r.nil? or r[ :items ].empty? then
         return
       end
 
-      resp = r[ :wall ][ 1 ]
+      resp = r[ :items ][ 1 ]
       d = @config[ 'groups' ][ g ]
 
       if !resp[ :is_pinned ].nil? and d[ 'id' ] >= resp[ :id ] then
-        resp = r[ :wall ][ 2 ]
+        resp = r[ :items ][ 2 ]
       end
 
       if resp.nil? or d[ 'id' ] >= resp[ :id ] then
@@ -84,7 +85,7 @@ module DiscordBot
       emb.color = "#507299"
       emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: r[ :groups ][ 0 ][ :name ], url: "http://vk.com/#{ r[ :groups ][ 0 ][ :screen_name ] }" )
       emb.title = "http://vk.com/wall#{ g }_#{ resp[ :id ] }"
-      emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ r[ :groups ][ 0 ][ :photo_big ] }" )
+      emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ r[ :groups ][ 0 ][ :photo_100 ] }" )
 
       text = resp[ :text ].gsub( "<br>", "\n" ).gsub( /(#[^\s]+([\s\n]*)?|\|\s*)/, "" )
       if text != "" then 
@@ -98,16 +99,18 @@ module DiscordBot
 
         case attach[ :type ]
         when "photo"
-          p = attach[ :photo ][ :src_big ] 
+          p = attach[ :photo ]
+	        img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
 
-          emb.add_field( name: "Изображение", value: p )
-          emb.image = Discordrb::Webhooks::EmbedImage.new( url: p )
+          emb.add_field( name: "Изображение", value: p[ img ] )
+          emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ img ] )
         when "video"
           p = attach[ :video ]
+	        img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
 
-          emb.add_field( name: "Видео", value: "http://vk.com/video#{ g }_#{ p[ :vid ] }" )
+          emb.add_field( name: "Видео", value: "http://vk.com/video#{ g }_#{ p[ :id ] }" )
           emb.add_field( name: "Название", value: p[ :title ] )
-          emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ :image_big ] ) 
+          emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ img ] ) 
         when "doc"
           p = attach[ :doc ]
 
@@ -117,8 +120,14 @@ module DiscordBot
       end
 
       d[ 'servers' ].each do | serv |
-        if @channels[ serv ].nil? or @channels[ serv ][ 'vk-news' ].nil? then next; end
-        @bot.send_message( @channels[ serv ][ 'vk-news' ], '', false, emb )
+        if @channels[ serv ].nil? then next; end
+
+        s_ch = @channels[ serv ].keys
+        channel = s_ch & @names
+
+        if channel.empty? then next; end
+        msg = @bot.send_message( @channels[ serv ][ channel[ 0 ] ], '', false, emb )
+	      msg.react '❤'
       end
     end
 
@@ -131,9 +140,11 @@ module DiscordBot
       end
 
       id = e.server.id
+      s_ch = @channels[ id ].keys
+      channel = s_ch & @names
 
-      if @channels[ id ][ 'vk-news' ].nil? then
-        e.respond "Отсутствует канал для новостей. Чтобы воспользоваться данной командой, создайте канал с названием 'vk-news'."
+      if channel.empty? then
+        e.respond "Отсутствует канал для новостей. Чтобы воспользоваться данной командой, создайте канал с один из названий #{ @names.join( ', ' ) }."
         return
       end
 

@@ -8,6 +8,7 @@ module DiscordBot
       @channels = client.channels
       @config = client.config
       @thr = client.thr
+      @names = [ 'recentchanges', 'правки', 'активность', 'вики-активность' ]
 
       for_init
     end
@@ -21,12 +22,12 @@ module DiscordBot
         usage: "!add_wiki ru.community",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w | 
-        begin
-          add_wiki( e, w )
-        rescue => err
-          puts "[add_wiki]: #{ err }"
-          e.respond "При попытке добавления произошла ошибка. Возможно, файл конфигурации сейчас перегружен. Попробуйте позднее."
-        end
+	      begin
+	        add_wiki( e, w )
+	      rescue => err
+	        puts "[add_wiki]: #{ err }"
+	        e.respond "При попытке добавления произошла ошибка. Возможно, файл конфигурации сейчас перегружен. Попробуйте позднее."
+	      end
       end
 
       @bot.command(
@@ -52,10 +53,10 @@ module DiscordBot
             end
           }
 
-          sleep 5
+	        sleep 5
         end
  
-        sleep 60
+	      sleep 60
 
         thr.each { |t| t.join }
         for_init
@@ -163,19 +164,18 @@ module DiscordBot
 
         emb.add_field( name: "Выполнил", value: obj[ :user ], inline: true )
         if obj[ :comment ].gsub( /^\s+/, '' ) != "" then
-          comment = obj[ :comment ].gsub( /(@(here|everyone)|<[@!#$]?&?\d*>)/, '[ yolo ]' )
+	        comment = obj[ :comment ].gsub( /(@(here|everyone)|<[@!#$]?&?\d*>)/, '[ yolo ]' )
           emb.add_field( name: "Описание", value: "#{ comment[ 0..100 ] }" )
         end
 
         data[ 'servers' ].each do | id |
-          if @channels[ id ].nil? then next;
-          elsif @channels[ id ][ 'recentchanges' ].nil? and @channels[ id ][ 'wiki-activity' ].nil? then next;
-          elsif @channels[ id ][ 'recentchanges' ].nil? then
-            channel = @channels[ id ][ 'wiki-activity' ]
-          else
-            channel = @channels[ id ][ 'recentchanges' ]
-          end
-          @bot.send_message( channel, '', false, emb )
+          if @channels[ id ].nil? then next; end
+
+          s_ch = @channels[ id ].keys
+          channel = s_ch & @names
+
+          if channel.empty? then next; end
+          @bot.send_message( @channels[ id ][ channel[ 0 ] ], '', false, emb )
         end
         sleep 1
       end
@@ -184,9 +184,10 @@ module DiscordBot
     def add_wiki( e, w )
       id = e.server.id
       w = w.gsub( /(http:\/\/|.wikia.com.*)/, '' )
+      s_ch = @channels[ id ].keys
 
-      if @channels[ id ][ 'recentchanges' ].nil? and @channels[ id ][ 'wiki-activity' ].nil? then
-        e.respond "<@#{ e.user.id }>, на сервере отсутствует канал #recentchanges/#wiki-activity, чтобы публиковать туда данные о свежих правках с вики. Пожалуйста, создайте канал и попробуйте снова."
+      if ( s_ch & @names ).empty? then
+        e.respond "<@#{ e.user.id }>, на сервере отсутствует канал с одним из названий (#{ @names.join( ', ' ) }), чтобы публиковать туда данные о свежих правках с вики. Пожалуйста, создайте канал и попробуйте снова."
         return
       end
 
