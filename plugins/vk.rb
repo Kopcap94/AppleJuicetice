@@ -100,13 +100,13 @@ module DiscordBot
         case attach[ :type ]
         when "photo"
           p = attach[ :photo ]
-	        img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
+          img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
 
           emb.add_field( name: "Изображение", value: p[ img ] )
           emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ img ] )
         when "video"
           p = attach[ :video ]
-	        img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
+          img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
 
           emb.add_field( name: "Видео", value: "http://vk.com/video#{ g }_#{ p[ :id ] }" )
           emb.add_field( name: "Название", value: p[ :title ] )
@@ -127,7 +127,7 @@ module DiscordBot
 
         if channel.empty? then next; end
         msg = @bot.send_message( @channels[ serv ][ channel[ 0 ] ], '', false, emb )
-	      msg.react '❤'
+        msg.react '❤'
       end
     end
 
