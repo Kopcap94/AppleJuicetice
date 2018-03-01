@@ -61,7 +61,7 @@ module DiscordBot
       if e.channel.pm? then
         e.respond "Сам с собой будешь играть?"
         return
-      elsif @channels[ id ][ 'mafia' ].nil? then
+      elsif @channels[ id ][ 'мафия' ].nil? then
         e.respond "Отсутствует канал для игры в мафию. Пожалуйста, создайте канал с названием mafia, чтобы запустить игру."
         return
       elsif s and state == "on" then
