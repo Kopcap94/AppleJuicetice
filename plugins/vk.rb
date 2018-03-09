@@ -67,11 +67,11 @@ module DiscordBot
         return
       end
 
-      resp = r[ :items ][ 1 ]
+      resp = r[ :items ][ 0 ]
       d = @config[ 'groups' ][ g ]
 
       if !resp[ :is_pinned ].nil? and d[ 'id' ] >= resp[ :id ] then
-        resp = r[ :items ][ 2 ]
+        resp = r[ :items ][ 1 ]
       end
 
       if resp.nil? or d[ 'id' ] >= resp[ :id ] then
