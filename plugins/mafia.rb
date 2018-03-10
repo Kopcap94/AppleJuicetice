@@ -98,17 +98,17 @@ module DiscordBot
       Thread.new {
         4.downto( 1 ) do | i |
           sleep 60
-          @bot.send_message( @channels[ id ][ 'mafia' ], "До завершения сбора заявок #{ i } #{ i == 1 ? "минута":"минуты" }" )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "До завершения сбора заявок #{ i } #{ i == 1 ? "минута":"минуты" }" )
         end
         sleep 60
   
         if @mafia[ id ][ 'users' ].count < 4 then
-          @bot.send_message( @channels[ id ][ 'mafia' ], "Игра отменена, мало участников." )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "Игра отменена, мало участников." )
           @mafia[ id ][ 'state' ] = false
           return true
         end
 
-        @bot.send_message( @channels[ id ][ 'mafia' ], "Начинается игра, рассылаю список ролей." )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "Начинается игра, рассылаю список ролей." )
         mafia_start_game( id )
       }
     end
@@ -192,11 +192,11 @@ module DiscordBot
         @mafia[ id ][ 'sec_vote' ] = {}
         u = [ [], 0 ]
 
-        @bot.send_message( @channels[ id ][ 'mafia' ], "Как бы то ни было, у жителей есть 4 минуты, чтобы найти преступников и убить их.\nИспользуйте команду !mafia_vote с упоминанием игрока, чтобы проголосовать за его убийство. Пример - !mafia_vote @kopcap" )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "Как бы то ни было, у жителей есть 4 минуты, чтобы найти преступников и убить их.\nИспользуйте команду !mafia_vote с упоминанием игрока, чтобы проголосовать за его убийство. Пример - !mafia_vote @kopcap" )
         sleep 240 # 4 минуты на размышление
 
         if @mafia[ id ][ 'sec_vote' ].count == 0 then
-          @bot.send_message( @channels[ id ][ 'mafia' ], "Видимо, мирным жителям неинтересна инициатива голосования и выживания." )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "Видимо, мирным жителям неинтересна инициатива голосования и выживания." )
           if @mafia[ id ][ 'running' ] then mafia_night_thread( id ) end
           return
         end
@@ -212,9 +212,9 @@ module DiscordBot
         end
 
         if u[ 0 ].count != 1 then
-          @bot.send_message( @channels[ id ][ 'mafia' ], "Мирные жители разошлись в мнении между <@#{ u[ 0 ].join( ">, <@" ) }>. Было принято решение вытянуть жребий." )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "Мирные жители разошлись в мнении между <@#{ u[ 0 ].join( ">, <@" ) }>. Было принято решение вытянуть жребий." )
           u[ 0 ] = [ u[ 0 ].sample ]
-          @bot.send_message( @channels[ id ][ 'mafia' ], "Короткий жребий достался <@#{ u[ 0 ][ 0 ] }>. Увы, но для него это конец." )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "Короткий жребий достался <@#{ u[ 0 ][ 0 ] }>. Увы, но для него это конец." )
         end
 
         kill( u[ 0 ][ 0 ], 'day', id )
@@ -224,7 +224,7 @@ module DiscordBot
 
     def mafia_night_thread( id )
       Thread.new {
-        @bot.send_message( @channels[ id ][ 'mafia' ], "Наступает ночь. Мирные жители засыпают. Просыпается мафия. У мафии 1,5 минуты на принятие решений." )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "Наступает ночь. Мирные жители засыпают. Просыпается мафия. У мафии 1,5 минуты на принятие решений." )
 
         @mafia[ id ][ 'night' ] = true
         @mafia[ id ][ 'mafia_vote' ] = []
@@ -245,16 +245,16 @@ module DiscordBot
 
         sleep 90 #1,5 минуты
 
-        @bot.send_message( @channels[ id ][ 'mafia' ], "На горизонте задребезжал рассвет. Мирные жители проснулись." )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "На горизонте задребезжал рассвет. Мирные жители проснулись." )
 
         if @mafia[ id ][ 'mafia_vote' ].count == 0 then
           k = @mafia[ id ][ 'roles' ][ :second ].sample
 
-          @bot.send_message( @channels[ id ][ 'mafia' ], "Кажется, этой ночью мафия не смогла договориться и решила оставить мирных жителей в покое.\nОднако этот мир жесток. Ночью по естественным причинам умер <@#{ k }>." )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "Кажется, этой ночью мафия не смогла договориться и решила оставить мирных жителей в покое.\nОднако этот мир жесток. Ночью по естественным причинам умер <@#{ k }>." )
         else
           k = !@mafia[ id ][ 'target' ].nil? ? @mafia[ id ][ 'target' ] : @mafia[ id ][ 'mafia_vote' ].sample
 
-          @bot.send_message( @channels[ id ][ 'mafia' ], "На улице было найдено тело <@#{ k }>. Следы пуль говорили о многом." )
+          @bot.send_message( @channels[ id ][ 'мафия' ], "На улице было найдено тело <@#{ k }>. Следы пуль говорили о многом." )
         end
 
         kill( k, 'night', id )
@@ -334,22 +334,22 @@ module DiscordBot
           @mafia[ id ][ 'roles' ][ :main ].delete( u )
         end
 
-        @bot.send_message( @channels[ id ][ 'mafia' ], "Жители приняли решение убить <@#{ u }>. После вынесения приговора и убийства выяснилось, что он был **#{ k }**." )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "Жители приняли решение убить <@#{ u }>. После вынесения приговора и убийства выяснилось, что он был **#{ k }**." )
       end
 
       m = @mafia[ id ][ 'roles' ][ :main ].count
       s = @mafia[ id ][ 'roles' ][ :second ].count
 
       if ( m == 1 and s < 2 ) or ( m == 2 and s < 3 ) then
-        @bot.send_message( @channels[ id ][ 'mafia' ], "Сколько бы мирные жители не старались бороться с мафией, у них это не вышло. Невозможно представить, какой ужас испытали последние выжившие, встретившись один на один с мафией. К сожалению, их игра закончена." )
-        @bot.send_message( @channels[ id ][ 'mafia' ], "Выжившая мафия: <@#{ @mafia[ id ][ 'roles' ][ :main ].join( "> <@!") }>" )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "Сколько бы мирные жители не старались бороться с мафией, у них это не вышло. Невозможно представить, какой ужас испытали последние выжившие, встретившись один на один с мафией. К сожалению, их игра закончена." )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "Выжившая мафия: <@#{ @mafia[ id ][ 'roles' ][ :main ].join( "> <@!") }>" )
 
         @mafia[ id ] = { 'state' => false, 'running' => false }
         return
       elsif m == 0 then
         @mafia[ id ] = { 'state' => false, 'running' => false }
 
-        @bot.send_message( @channels[ id ][ 'mafia' ], "С утра местный шериф, попивая кофе у себя дома, радостно улыбнётся, прочитав заголовок о полном провале мафии в этом городе. На этот раз игра для них закончена. Но конец ли это в общем?" )
+        @bot.send_message( @channels[ id ][ 'мафия' ], "С утра местный шериф, попивая кофе у себя дома, радостно улыбнётся, прочитав заголовок о полном провале мафии в этом городе. На этот раз игра для них закончена. Но конец ли это в общем?" )
         return
       end
     end
