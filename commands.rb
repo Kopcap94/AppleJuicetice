@@ -86,7 +86,7 @@ module DiscordBot
         permission_level: 3,
         usage: "!cls",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e, *c |
+      ) do | e |
         Gem.win_platform? ? ( system "cls" ) : ( system "clear && printf '\e[3J'" )
         e.message.create_reaction "\u2611"
       end
@@ -112,7 +112,7 @@ module DiscordBot
         parameters: {
           hidden: true
         }
-      ) do | e, s | 
+      ) do | e, *s | 
         if [ 343404836894801920, 321949136838459392 ].include? e.server.id then
           check_online( e, s )
         end
@@ -259,16 +259,20 @@ module DiscordBot
       e.respond "Участник #{ @bot.users[ u ].username } #{ s ? "добавлен в игнор" : "убран из игнора" }."
     end
 
-    def check_online( e, s )
+    def check_online( e, arr )
       o = {
         '1' => 1431093,
         '2' => 1907245
       }
 
+      s = arr[ 0 ]
+
       if o[ s ].nil? then
         e.respond "Неправильно указан номер сервера. Доступные номера серверов: #{ o.keys.join( ', ' ) }."
         return
       end
+
+      s_check = ( !arr[ 1 ].nil? && arr[ 1 ] == '-s' ) ? true : false 
 
       d = JSON.parse(
         HTTParty.get(
@@ -289,7 +293,20 @@ module DiscordBot
           cur = cur + 1
         end
 
-        arr[ cur ].push( obj[ :attributes ][ :name ] )
+        player_name = obj[ :attributes ][ :name ]
+        if s_check then
+          score = 0
+
+          obj[ :meta ][ :metadata ].each do | obj |
+            if obj[ :key ] == 'score' then
+              score = obj[ :value ]
+            end
+          end
+
+          player_name = "#{ player_name } [#{ score }]"
+        end
+
+        arr[ cur ].push( player_name )
       end
 
       e.channel.send_embed do | emb |
