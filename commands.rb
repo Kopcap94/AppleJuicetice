@@ -58,6 +58,14 @@ module DiscordBot
       ) do | e | drop( e ) end
 
       @bot.command(
+        :empty,
+        permission_level: 2,
+        description: "Данная команда позволит вывести список пустых ролей на сервере.",
+        usage: "!empty",
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
+      ) do | e | empty_roles( e ) end
+
+      @bot.command(
         :ign,
         min_args: 1,
         permission_level: 3,
@@ -106,6 +114,11 @@ module DiscordBot
       ) do | e | die( e ) end
 
       @bot.command(
+        :server,
+        permission_level: 3
+      ) do | e | stats( e ) end
+
+      @bot.command(
         :online,
         description: "Выводит информацию об онлайне серверов. Требуется ввести номер сервера.",
         usage: "!online 1",
@@ -118,7 +131,7 @@ module DiscordBot
         end
       end
     end
-
+  
     def help( e, s )
       t = s ? e.user.pm : e.channel
 
@@ -139,10 +152,39 @@ module DiscordBot
       end
     end
 
+    def empty_roles( e )
+      roles = []
+
+      @bot.servers[ e.server.id ].roles.each do | r | 
+        roles.push( r.name ) if r.members.length == 0 && r.name !~ /everyone$/
+      end
+
+      if roles.empty? then
+        e.respond "На сервере отсутствуют пустые роли."
+      else
+        e.respond roles.join( "\n" );
+      end
+    end
+
     def die( e )
       @c.thr.each {| k, thr | thr.kill }
       e.respond "Перезапускаюсь."
       exit
+    end
+
+    def stats( e )
+      ram = %x{ free }.lines.to_a[ 1 ].split[ 1, 3 ].map { | v | ( v.to_f / 1024.0 ).to_i }
+      cpu = %x{ top -n1 }.lines.find{ | l | /Cpu\(s\):/.match( l ) }.split[ 1 ]
+
+      e.channel.send_embed do | emb |
+        emb.color = "#FFA500"
+
+        emb.title = "Текущая статистика сервера"
+        emb.add_field( name: "CPU", value: "#{ cpu }%", inline: true )
+        emb.add_field( name: "RAM", value: "#{ ram[ 1 ] }/#{ ram[ 0 ] } mb [#{ ( ( ram[ 1 ].to_f * 100.0 ) / ram[ 0 ].to_f ).to_i }%]", inline: true )
+
+        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
+      end
     end
 
     def avatar( e, a )
@@ -260,23 +302,11 @@ module DiscordBot
     end
 
     def check_online( e, arr )
-      o = {
-        '1' => 1431093,
-        '2' => 1907245
-      }
-
-      s = arr[ 0 ]
-
-      if o[ s ].nil? then
-        e.respond "Неправильно указан номер сервера. Доступные номера серверов: #{ o.keys.join( ', ' ) }."
-        return
-      end
-
-      s_check = ( !arr[ 1 ].nil? && arr[ 1 ] == '-s' ) ? true : false 
+      s_check = ( !arr[ 0 ].nil? && arr[ 0 ] == '-s' ) ? true : false 
 
       d = JSON.parse(
         HTTParty.get(
-          "https://api.battlemetrics.com/servers/#{ o[ s ] }?include=player",
+          "https://api.battlemetrics.com/servers/1431093?include=player",
           :verify_peer => false
         ).body,
         :symbolize_names => true
@@ -287,6 +317,7 @@ module DiscordBot
 
       arr = Array.new( 6 ) { Array.new }
       cur = 0
+      score = nil
 
       players.each do | obj |
         if arr[ cur ].length >= 10 then
@@ -295,7 +326,7 @@ module DiscordBot
 
         player_name = obj[ :attributes ][ :name ]
         if s_check then
-          score = 0
+          score = "**X**"
 
           obj[ :meta ][ :metadata ].each do | obj |
             if obj[ :key ] == 'score' then
@@ -324,7 +355,13 @@ module DiscordBot
           counter = counter + 10
         end
 
+        if s_check then
+          emb.add_field( name: "Где:", value: "**X** - игрок в лобби" )
+        end
+
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'DayZ Epoch RU 174', url: 'https://vk.com/epoch_ru174', icon_url: 'https://pp.userapi.com/c636518/v636518986/55ebe/C2exL6Yrhbs.jpg' )
+
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
       end
     end
   end
