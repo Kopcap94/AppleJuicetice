@@ -8,7 +8,7 @@ module DiscordBot
       @channels = client.channels
       @config = client.config
       @thr = client.thr
-      @names = [ 'recentchanges', 'правки', 'активность', 'вики-активность' ]
+      @names = [ 'recentchanges', 'wiki-activity', 'правки', 'активность', 'вики-активность' ]
 
       for_init
     end
@@ -49,11 +49,12 @@ module DiscordBot
             begin
               get_data_from_api( w )
             rescue => err
+              puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Error with wiki #{ w }"
               @c.error_log( err, "WIKI" )
             end
           }
 
-          sleep 5
+        sleep 5
         end
  
         sleep 60
@@ -64,13 +65,20 @@ module DiscordBot
     end
 
     def get_data_from_api( w )
-      d =  JSON.parse(
+      d = JSON.parse(
         HTTParty.get(
           "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
           :verify => false
         ).body,
         :symbolize_names => true
-      )[ :query ][ :recentchanges ]
+      )
+
+      if d[ :query ].nil? or d[ :query ][ :recentchanges ].nil? then
+        puts d
+        return
+      end
+
+      d = d[ :query ][ :recentchanges ]
 
       data = @config[ 'wikies' ][ w ]
       rcid = data[ 'rcid' ]
@@ -80,13 +88,16 @@ module DiscordBot
       if rcid == 0 then
         @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
         @c.save_config
+
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
       if last_rcid <= rcid then
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
-      
+
       @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
       @c.save_config
 
@@ -177,8 +188,12 @@ module DiscordBot
           if channel.empty? then next; end
           @bot.send_message( @channels[ id ][ channel[ 0 ] ], '', false, emb )
         end
+
         sleep 1
       end
+
+      local_variables.each { | var | eval( "#{ var } = nil" ) }
+      sleep 1
     end
 
     def add_wiki( e, w )
