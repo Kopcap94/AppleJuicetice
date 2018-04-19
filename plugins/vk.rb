@@ -40,9 +40,10 @@ module DiscordBot
 
           thr << Thread.new {
             begin
+              puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Checking group: #{ k }"
               get_data_from_group( k )
             rescue => err
-              @client.error_log( err, "VK" )
+              @client.error_log( err, "VK group #{ k }" )
             end
           }
 
@@ -64,6 +65,7 @@ module DiscordBot
       )[ :response ]
 
       if r.nil? or r[ :items ].empty? then
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
@@ -75,11 +77,17 @@ module DiscordBot
       end
 
       if resp.nil? or d[ 'id' ] >= resp[ :id ] then
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
       @config[ 'groups' ][ g ][ 'id' ] = resp[ :id ]
       @client.save_config
+
+      if !resp[ :copy_history ].nil? then
+        resp[ :copy_history ][ :id ] = resp[ :id ]
+        resp = resp[ :copy_history ]
+      end
 
       emb = Discordrb::Webhooks::Embed.new
       emb.color = "#507299"
@@ -129,6 +137,9 @@ module DiscordBot
         msg = @bot.send_message( @channels[ serv ][ channel[ 0 ] ], '', false, emb )
         msg.react '❤'
       end
+
+      local_variables.each { | var | eval( "#{ var } = nil" ) }
+      sleep 1
     end
 
     def add_group( e, g )
