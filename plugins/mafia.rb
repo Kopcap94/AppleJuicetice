@@ -64,6 +64,8 @@ module DiscordBot
       elsif @channels[ id ][ 'мафия' ].nil? then
         e.respond "Отсутствует канал для игры в мафию. Пожалуйста, создайте канал с названием 'мафия', чтобы запустить игру."
         return
+      elsif !@mafia[ id ][ 'running' ].nil? and @mafia[ id ][ 'running' ] then
+        e.respond "Действие по запуску/остановке игры невозможно - игра уже идёт."
       elsif s and state == "on" then
         e.respond "Мафия уже включена."
         return
@@ -277,7 +279,7 @@ module DiscordBot
         return
       elsif (!@mafia[ id ][ 'roles' ][ :main ].include?( u ) and !@mafia[ id ][ 'roles' ][ :second ].include?( u ) ) then
         return
-      elsif v.nil? or v == "" then
+      elsif v.nil? or v == "" or v == 0 then
         e.user.pm "Неправильно выбран участник. Попробуйте проголосовать снова."
         return
       elsif @mafia[ id ][ 'sec_vote' ][ v ].nil? then
