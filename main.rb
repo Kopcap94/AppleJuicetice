@@ -14,7 +14,7 @@ module DiscordBot
           'prefix' => '!', 
           'owner' => 0,
           'wikies' => {},
-          'groups' => { 'access_token': '' },
+          'groups' => { 'access_token' => '' },
           'ignored' => [],
           'blacklisted' => [],
           'exclude welcome' => []
