@@ -60,6 +60,7 @@ module DiscordBot
         return
       elsif !@mafia[ id ][ 'running' ].nil? and @mafia[ id ][ 'running' ] then
         e.respond "Действие по запуску игры невозможно - игра уже идёт."
+        return
       elsif @mafia[ id ][ 'state' ] then
         e.respond "Мафия уже включена."
         return
