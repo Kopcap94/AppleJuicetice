@@ -263,10 +263,10 @@ module DiscordBot
         return
       elsif (!@mafia[ id ][ 'roles' ][ :main ].include?( u ) and !@mafia[ id ][ 'roles' ][ :second ].include?( u ) ) then
         return
-      elsif v.nil? or v == "" or v == 0 then
+      elsif [ nil, "", 0 ].include?( v ) then
         e.user.pm "Неправильно выбран участник. Попробуйте проголосовать снова."
         return
-      elsif (!@mafia[ id ][ 'roles' ][ :main ].include?( v ) or !@mafia[ id ][ 'roles' ][ :second ].include?( v ) ) then
+      elsif (!@mafia[ id ][ 'roles' ][ :main ].include?( v ) and !@mafia[ id ][ 'roles' ][ :second ].include?( v ) ) then
         e.user.pm "Данный игрок не участвует в игре или уже был убит."
         return
       elsif @mafia[ id ][ 'sec_vote' ][ v ].nil? then
