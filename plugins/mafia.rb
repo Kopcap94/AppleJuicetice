@@ -266,6 +266,9 @@ module DiscordBot
       elsif v.nil? or v == "" or v == 0 then
         e.user.pm "Неправильно выбран участник. Попробуйте проголосовать снова."
         return
+      elsif (!@mafia[ id ][ 'roles' ][ :main ].include?( v ) or !@mafia[ id ][ 'roles' ][ :second ].include?( v ) ) then
+        e.user.pm "Данный игрок не участвует в игре или уже был убит."
+        return
       elsif @mafia[ id ][ 'sec_vote' ][ v ].nil? then
         @mafia[ id ][ 'sec_vote' ][ v ] = []
       else # проверка, если уже голосовали
