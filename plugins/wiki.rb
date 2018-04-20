@@ -34,7 +34,7 @@ module DiscordBot
         :attr_wiki,
         permission_level: 2,
         min_args: 2,
-        description: "Изменяет переменную отображения загрузок (uploads) и логов (logs).",
+        description: "Изменяет переменную отображения загрузок (uploads), логов (logs) или ботов (bots).",
         usage: "!attr_wiki ru.community logs",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w, t | attr_wiki( e, w, t ) end
@@ -67,7 +67,7 @@ module DiscordBot
     def get_data_from_api( w )
       d = JSON.parse(
         HTTParty.get(
-          "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
+          "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges|groupmembers&rclimit=50&gmlimit=50&gmgroups=bot|bot-global&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
           :verify => false
         ).body,
         :symbolize_names => true
@@ -78,17 +78,19 @@ module DiscordBot
         return
       end
 
-      d = d[ :query ][ :recentchanges ]
+      bots = []
+      d[ :users ].each do | bot |
+        bots.push( bot[ :name ] )
+      end
 
+      d = d[ :query ][ :recentchanges ]
       data = @config[ 'wikies' ][ w ]
       rcid = data[ 'rcid' ]
-      show_uploads = data[ 'uploads' ]
       last_rcid = d[ 0 ][ :rcid ]
 
       if rcid == 0 then
         @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
         @c.save_config
-
         local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
@@ -105,7 +107,7 @@ module DiscordBot
         if( obj[ :rcid ] <= rcid ) or
           ( obj[ :revid ] == 0 and !data[ 'logs' ] ) or
           ( obj[ :type ] == 'log' and obj[ :logtype ] == 'upload' and !data[ 'uploads' ] ) or
-          ( [ 'Wikia', 'WikiaBot', 'FANDOM' ].include? obj[ :user ] )
+          ( !data[ 'bots' ] and bots.include?( obj[ :user ] ) )
           next
         end
 
@@ -211,6 +213,7 @@ module DiscordBot
           'rcid' => 0,
           'uploads' => true,
           'logs' => true,
+          'bots' => true,
           'servers' => [ id ]
         }
       elsif @config[ 'wikies' ][ w ][ 'servers' ].include?( id ) then
@@ -229,8 +232,8 @@ module DiscordBot
       if @config[ 'wikies' ][ w ].nil? then
         e.respond "Такого вики-проекта не существует."
         return
-      elsif ![ 'uploads', 'logs' ].include?( t ) then
-        e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs."
+      elsif ![ 'uploads', 'logs', 'bots' ].include?( t ) then
+        e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs, bots."
         return
       end
 
