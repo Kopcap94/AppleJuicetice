@@ -18,10 +18,9 @@ module DiscordBot
     def commands
       @bot.command(
         :mafia,
-        min_args: 1,
         description: "Взаимодействие с игрой Мафия.",
-        usage: "Требуется указать значение on/off: !mafia on"
-      ) do | e, s | mafia( e, s ) end
+        usage: "!mafia"
+      ) do | e | mafia( e ) end
 
       @bot.command(
         :mafia_join,
@@ -50,60 +49,44 @@ module DiscordBot
       ) do | e, s, v | mafia_kill( e, s, v ) end
     end
 
-    def mafia( e, state )
+    def mafia( e )
       if e.channel.pm? then return; end
 
       id = e.server.id
       if @mafia[ id ].nil? then @mafia[ id ] = { 'state' => false, 'running' => false } end
 
-      s = @mafia[ id ][ 'state' ]
-
-      if e.channel.pm? then
-        e.respond "Сам с собой будешь играть?"
-        return
-      elsif @channels[ id ][ 'мафия' ].nil? then
+      if @channels[ id ][ 'мафия' ].nil? then
         e.respond "Отсутствует канал для игры в мафию. Пожалуйста, создайте канал с названием 'мафия', чтобы запустить игру."
         return
       elsif !@mafia[ id ][ 'running' ].nil? and @mafia[ id ][ 'running' ] then
-        e.respond "Действие по запуску/остановке игры невозможно - игра уже идёт."
-      elsif s and state == "on" then
+        e.respond "Действие по запуску игры невозможно - игра уже идёт."
+      elsif @mafia[ id ][ 'state' ] then
         e.respond "Мафия уже включена."
         return
-      elsif !s and state == "off" then
-        e.respond "Мафия на данный момент отключена. Нельзя отключить то, что уже отключено."
-        return
-      elsif s and state == "off" then
-        @mafia[ id ][ 'state' ] = false
-        e.respond "Игра отключена."
-        return
-      elsif !s and state == "on" then
-        if @mafia[ id ][ 'running' ] then
-          e.respond "На данный момент идёт игра. Включить игру снова невозможно."
-          return
-        end
-
-        begin
-          @mafia[ id ][ 'users' ] = {}
-          @mafia[ id ][ 'state' ] = true
-
-          mafia_time_thread( id )
-          mafia_join( e )
-        rescue => err
-          @c.error_log( err, "MAFIA" )
-        end
-
-        e.respond "@here Начинается сбор заявок на участие в игре! Оставить заявку можно командой !mafia_join. Сбор заявок в течении 5 минут."
       end
+
+      begin
+        @mafia[ id ][ 'users' ] = {}
+        @mafia[ id ][ 'state' ] = true
+
+        mafia_time_thread( id )
+        mafia_join( e )
+      rescue => err
+        @c.error_log( err, "MAFIA" )
+      end
+
+      e.respond "@here Начинается сбор заявок на участие в игре! Оставить заявку можно командой !mafia_join. Сбор заявок в течение 5 минут."
     end
 
     def mafia_time_thread( id )
       Thread.new {
         4.downto( 1 ) do | i |
           sleep 60
-          @bot.send_message( @channels[ id ][ 'мафия' ], "До завершения сбора заявок #{ i } #{ i == 1 ? "минута":"минуты" }" )
+
+          @bot.send_message( @channels[ id ][ 'мафия' ], "До завершения сбора заявок #{ i } #{ i == 1 ? "минута":"минуты" }." )
         end
         sleep 60
-  
+
         if @mafia[ id ][ 'users' ].count < 4 then
           @bot.send_message( @channels[ id ][ 'мафия' ], "Игра отменена, мало участников." )
           @mafia[ id ][ 'state' ] = false
@@ -124,7 +107,7 @@ module DiscordBot
       u = e.user.id
       id = e.server.id
 
-      if @mafia[ id ][ 'state' ] == false then
+      if @mafia[ id ].nil? or !@mafia[ id ][ 'state' ] then
         e.user.pm "Игра \"Мафия\" отключена"
         return
       elsif @mafia[ id ][ 'running' ] then
@@ -148,7 +131,7 @@ module DiscordBot
       u = e.user.id
       id = e.server.id
 
-      if !@mafia[ id ][ 'state' ] then
+      if @mafia[ id ].nil? or !@mafia[ id ][ 'state' ] then
         return
       elsif @mafia[ id ][ 'users' ][ u ].nil? then
         e.user.pm "Вашей заявки не было в списке участников."
