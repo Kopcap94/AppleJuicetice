@@ -73,6 +73,7 @@ module DiscordBot
         mafia_time_thread( id )
         mafia_join( e )
       rescue => err
+        @mafia[ id ] = { 'state' => false, 'running' => false }
         @c.error_log( err, "MAFIA" )
       end
 
@@ -95,7 +96,13 @@ module DiscordBot
         end
 
         @bot.send_message( @channels[ id ][ 'мафия' ], "Начинается игра, рассылаю список ролей." )
-        mafia_start_game( id )
+        
+        begin
+          mafia_start_game( id )
+        rescue => err
+          @mafia[ id ] = { 'state' => false, 'running' => false }
+          @c.error_log( err, "MAFIA" )
+        end
       }
     end
 
