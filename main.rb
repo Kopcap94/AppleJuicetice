@@ -35,6 +35,7 @@ module DiscordBot
       @thr = {}
       @cfg_mutex = Mutex.new
       @error_log = Mutex.new
+      @started = false
     end
 
     def start
@@ -44,11 +45,16 @@ module DiscordBot
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
         update_info
-        ignore_users
-        register_modules
+
+        if !@started then
+          ignore_users
+          register_modules
+          GC.start(full_mark: true, immediate_sweep: true)
+
+          @started = true
+        end
 
         @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
-        GC.start(full_mark: true, immediate_sweep: true)
       end
 
       @bot.pm do | e |

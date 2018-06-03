@@ -117,21 +117,8 @@ module DiscordBot
         :server,
         permission_level: 3
       ) do | e | stats( e ) end
-
-      @bot.command(
-        :online,
-        description: "Выводит информацию об онлайне серверов. Требуется ввести номер сервера.",
-        usage: "!online 1",
-        parameters: {
-          hidden: true
-        }
-      ) do | e, *s | 
-        if [ 343404836894801920, 321949136838459392 ].include? e.server.id then
-          check_online( e, s )
-        end
-      end
     end
-  
+
     def help( e, s )
       t = s ? e.user.pm : e.channel
 
@@ -299,70 +286,6 @@ module DiscordBot
 
       @c.save_config
       e.respond "Участник #{ @bot.users[ u ].username } #{ s ? "добавлен в игнор" : "убран из игнора" }."
-    end
-
-    def check_online( e, arr )
-      s_check = ( !arr[ 0 ].nil? && arr[ 0 ] == '-s' ) ? true : false 
-
-      d = JSON.parse(
-        HTTParty.get(
-          "https://api.battlemetrics.com/servers/1431093?include=player",
-          :verify_peer => false
-        ).body,
-        :symbolize_names => true
-      )
-
-      serv = d[ :data ][ :attributes ]
-      players = d[ :included ]
-
-      arr = Array.new( 6 ) { Array.new }
-      cur = 0
-      score = nil
-
-      players.each do | obj |
-        if arr[ cur ].length >= 10 then
-          cur = cur + 1
-        end
-
-        player_name = obj[ :attributes ][ :name ]
-        if s_check then
-          score = "**X**"
-
-          obj[ :meta ][ :metadata ].each do | obj |
-            if obj[ :key ] == 'score' then
-              score = obj[ :value ]
-            end
-          end
-
-          player_name = "#{ player_name } [#{ score }]"
-        end
-
-        arr[ cur ].push( player_name )
-      end
-
-      e.channel.send_embed do | emb |
-        emb.color = "#4A804C"
-
-        emb.add_field( name: "Онлайн", value: "#{ serv[ :players ] }/#{ serv[ :maxPlayers ] }", inline: true )
-        emb.add_field( name: "IP/Port", value: "#{ serv[ :ip ] }:#{ serv[ :port ] }", inline: true )
-        emb.add_field( name: "Сервер", value: serv[ :details ][ :mission ] )
-        emb.add_field( name: "Моды", value: serv[ :details ][ :mods ].map { | val | if ( /DayZ/ =~ val && /@/ !~ val ) then val end }.compact.join( "\n" ) )
-
-        counter = 1
-        arr.each_with_index do | list, ind |
-          break if list.empty?
-          emb.add_field( name: ( ind == 0 ) ? "[ Игроки ]":"#", value: list.map.with_index{ | p, i | "**#{ i + counter }**. #{ p }" }.join( "\n" ), inline: true )
-          counter = counter + 10
-        end
-
-        if s_check then
-          emb.add_field( name: "Где:", value: "**X** - игрок в лобби" )
-        end
-
-        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'DayZ Epoch RU 174', url: 'https://vk.com/epoch_ru174', icon_url: 'https://pp.userapi.com/c636518/v636518986/55ebe/C2exL6Yrhbs.jpg' )
-
-        local_variables.each { | var | eval( "#{ var } = nil" ) }
-      end
     end
   end
 end
