@@ -32,25 +32,20 @@ module DiscordBot
     end
 
     def for_init
-      thr = []
-
       @thr[ 'vk' ] = Thread.new {
         @config[ 'groups' ].clone.each do | k, v |
           if k == 'access_token' then next; end
 
-          thr << Thread.new {
-            begin
-              puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Checking group: #{ k }"
-              get_data_from_group( k )
-            rescue => err
-              @client.error_log( err, "VK group #{ k }" )
-            end
-          }
+          begin
+            puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Checking group: #{ k }"
+            get_data_from_group( k )
+          rescue => err
+            @client.error_log( err, "VK group #{ k }" )
+          end
 
-          sleep 60
+          sleep 90
         end
 
-        thr.each { | t | t.join }
         for_init
       }
     end

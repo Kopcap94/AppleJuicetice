@@ -235,6 +235,9 @@ module DiscordBot
       elsif ![ 'uploads', 'logs', 'bots' ].include?( t ) then
         e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs, bots."
         return
+      elsif !@config[ 'wikies' ][ w ][ 'servers' ].include?( e.server.id ) then
+        e.respond "Недостаточно прав, чтобы изменять настройки для данной вики."
+        return
       end
 
       s = @config[ 'wikies' ][ w ][ t ]
