@@ -91,12 +91,12 @@ module DiscordBot
       if rcid == 0 then
         @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
         @c.save_config
-        local_variables.each { | var | eval( "#{ var } = nil" ) }
+	local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
       if last_rcid <= rcid then
-        local_variables.each { | var | eval( "#{ var } = nil" ) }
+	local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
@@ -154,7 +154,13 @@ module DiscordBot
           when "block"
             name = "блокировок"
             url = "block"
-            title = obj[ :logaction ] == 'block' ? "Заблокирован" : "Разблокирован"
+            if obj[ :logaction ] == 'block' then
+              title = "Заблокирован"
+            elsif obj[ :logaction ] == 'reblock' then
+              title = "Изменена блокировка"
+            else
+              title = "Разблокирован"
+            end
             value = obj[ :title ].gsub( /^[^:]+:/, '' )
           when "upload"
             name = "загрузок"
@@ -172,6 +178,8 @@ module DiscordBot
           # Blocks
           if obj[ :logaction ] == 'block' then
             emb.add_field( name: "Истекает", value: obj[ :block ][ :expiry ], inline: true )
+          elsif obj[ :logaction ] == 'reblock' then
+            emb.add_field( name: "Изменены условия", value: obj[ :"0" ], inline: true )
           end
         end
 
