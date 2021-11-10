@@ -34,40 +34,40 @@ module DiscordBot
         :attr_wiki,
         permission_level: 2,
         min_args: 2,
-        description: "Изменяет переменную отображения загрузок (uploads), логов (logs) или ботов (bots).",
+        description: "Изменяет переменную отображения загрузок (uploads) или логов (logs).",
         usage: "!attr_wiki ru.community logs",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e, w, t | attr_wiki( e, w, t ) end
     end
 
     def for_init
-      thr = []
-
       @thr[ 'wiki' ] = Thread.new {
         @config[ 'wikies' ].clone.each do | w, d |
-          thr << Thread.new {
-            begin
-              get_data_from_api( w )
-            rescue => err
-              puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Error with wiki #{ w }"
-              @c.error_log( err, "WIKI" )
-            end
-          }
+          begin
+            get_data_from_api( w )
+          rescue => err
+            puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Error with wiki #{ w }"
+            @c.error_log( err, "WIKI" )
+          end
 
-        sleep 5
+          sleep 3
         end
  
-        sleep 60
+        sleep 30
 
-        thr.each { |t| t.join }
         for_init
       }
     end
 
     def get_data_from_api( w )
+	    w_a = w.split( "." )
+	    form_url = w_a.count == 2 ?
+	             "https://#{ w_a[ 1 ] }.fandom.com/#{ w_a[ 0 ] }" :
+               "https://#{ w_a[ 0 ] }.fandom.com"
+
       d = JSON.parse(
         HTTParty.get(
-          "http://#{ w }.wikia.com/api.php?action=query&list=recentchanges|groupmembers&rclimit=50&gmlimit=50&gmgroups=bot|bot-global&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
+          "#{ form_url }/api.php?action=query&list=recentchanges&rclimit=50&rcprop=user|title|timestamp|ids|comment|sizes|loginfo&format=json",
           :verify => false
         ).body,
         :symbolize_names => true
@@ -78,11 +78,6 @@ module DiscordBot
         return
       end
 
-      bots = []
-      d[ :users ].each do | bot |
-        bots.push( bot[ :name ] )
-      end
-
       d = d[ :query ][ :recentchanges ]
       data = @config[ 'wikies' ][ w ]
       rcid = data[ 'rcid' ]
@@ -91,12 +86,12 @@ module DiscordBot
       if rcid == 0 then
         @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
         @c.save_config
-	local_variables.each { | var | eval( "#{ var } = nil" ) }
+	    local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
       if last_rcid <= rcid then
-	local_variables.each { | var | eval( "#{ var } = nil" ) }
+	    local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
@@ -106,8 +101,7 @@ module DiscordBot
       d.reverse.each do | obj |
         if( obj[ :rcid ] <= rcid ) or
           ( obj[ :revid ] == 0 and !data[ 'logs' ] ) or
-          ( obj[ :type ] == 'log' and obj[ :logtype ] == 'upload' and !data[ 'uploads' ] ) or
-          ( !data[ 'bots' ] and bots.include?( obj[ :user ] ) )
+          ( obj[ :type ] == 'log' and obj[ :logtype ] == 'upload' and !data[ 'uploads' ] )
           next
         end
 
@@ -119,8 +113,8 @@ module DiscordBot
           title = "[ #{ w } ] #{ obj[ :title ] }"
           if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "[ #{ w } ] Тема на форуме или стене обсуждения" end
 
-          emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "http://#{ w }.wikia.com/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
-          emb.title = "http://#{ w }.wikia.com/index.php?diff=#{ obj[ :revid ] }"
+          emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "#{ form_url }/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
+          emb.title = "#{ form_url }/index.php?diff=#{ obj[ :revid ] }"
           emb.add_field( name: "Изменения:", value: "#{ obj[ :newlen ] - obj[ :oldlen ] } байт", inline: true )
         else
           emb.color = "#759B01"
@@ -172,14 +166,16 @@ module DiscordBot
             next
           end
 
-          emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "[ #{ w } ] Лог #{ name }", url: "http://#{ w }.wikia.com/wiki/Special:Log/#{ url }" )
+          emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "[ #{ w } ] Лог #{ name }", url: "#{ form_url }/wiki/Special:Log/#{ url }" )
           emb.add_field( name: title, value: value, inline: true )
 
           # Blocks
           if obj[ :logaction ] == 'block' then
-            emb.add_field( name: "Истекает", value: obj[ :block ][ :expiry ], inline: true )
-          elsif obj[ :logaction ] == 'reblock' then
-            emb.add_field( name: "Изменены условия", value: obj[ :"0" ], inline: true )
+            if (!obj[ :block ].nil?) then
+              emb.add_field( name: "Истекает", value: obj[ :block ][ :expiry ], inline: true )
+            else
+              emb.add_field( name: "Истекает", value: obj[ :logparams ][ :expiry ], inline: true )
+            end
           end
         end
 
@@ -207,8 +203,12 @@ module DiscordBot
     end
 
     def add_wiki( e, w )
+	    if w =~ /(^https?:|(fandom|wikia)\.com)/
+		    e.respond "<@#{ e.user.id }>, неправильно указана вики. Пример - ru.community (формируется в соответствии с адресной строкой //**community**.fandom.com/**ru**/wiki)."
+		    return;
+	    end
+
       id = e.server.id
-      w = w.gsub( /(http:\/\/|.wikia.com.*)/, '' )
       s_ch = @channels[ id ].keys
 
       if ( s_ch & @names ).empty? then
@@ -221,7 +221,6 @@ module DiscordBot
           'rcid' => 0,
           'uploads' => true,
           'logs' => true,
-          'bots' => true,
           'servers' => [ id ]
         }
       elsif @config[ 'wikies' ][ w ][ 'servers' ].include?( id ) then
@@ -240,8 +239,8 @@ module DiscordBot
       if @config[ 'wikies' ][ w ].nil? then
         e.respond "Такого вики-проекта не существует."
         return
-      elsif ![ 'uploads', 'logs', 'bots' ].include?( t ) then
-        e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs, bots."
+      elsif ![ 'uploads', 'logs' ].include?( t ) then
+        e.respond "Таких параметров не существует. Предлагаемые параметры: uploads, logs."
         return
       elsif !@config[ 'wikies' ][ w ][ 'servers' ].include?( e.server.id ) then
         e.respond "Недостаточно прав, чтобы изменять настройки для данной вики."
