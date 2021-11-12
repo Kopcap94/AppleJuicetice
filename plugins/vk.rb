@@ -53,7 +53,7 @@ module DiscordBot
     def get_data_from_group( g )
       r = JSON.parse(
         HTTParty.get(
-          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=2&offset=0&extended=1&v=5.7&access_token=" + @config[ 'groups' ][ 'access_token' ],
+          "https://api.vk.com/method/wall.get?owner_id=#{ g }&count=2&offset=0&extended=1&v=5.131&access_token=" + @config[ 'groups' ][ 'access_token' ],
           :verify_peer => false
         ).body,
         :symbolize_names => true
@@ -67,7 +67,7 @@ module DiscordBot
       resp = r[ :items ][ 0 ]
       d = @config[ 'groups' ][ g ]
 
-      if !resp[ :is_pinned ].nil? and d[ 'id' ] >= resp[ :id ] then
+      if !resp[ :is_pinned ].nil? then
         resp = r[ :items ][ 1 ]
       end
 
@@ -90,7 +90,7 @@ module DiscordBot
       emb.title = "http://vk.com/wall#{ g }_#{ resp[ :id ] }"
       emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "#{ r[ :groups ][ 0 ][ :photo_100 ] }" )
 
-      text = resp[ :text ].gsub( "<br>", "\n" ).gsub( /(#[^\s]+([\s\n]*)?|\|\s*)/, "" )
+      text = resp[ :text ].gsub( "<br>", "\n" ).gsub( /((@|#)[^\s]+([\s\n]*)?|\|\s*)/, "" )
       if text != "" then 
         if text.length > 100 then text = text[0..100] end
         emb.add_field( name: "Текст поста:", value: text )
@@ -103,17 +103,17 @@ module DiscordBot
         case attach[ :type ]
         when "photo"
           p = attach[ :photo ]
-          img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
+          img = p[ :sizes ].compact[ -1 ]
 
-          emb.add_field( name: "Изображение", value: p[ img ] )
-          emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ img ] )
+          emb.add_field( name: "Изображение", value: img[ :url ] )
+          emb.image = Discordrb::Webhooks::EmbedImage.new( url: img[ :url ] )
         when "video"
           p = attach[ :video ]
-          img = p.keys.map {| v | v if v =~ /photo_/ }.compact[ -1 ]
+          img = p[ :image ].compact[ -1 ]
 
           emb.add_field( name: "Видео", value: "http://vk.com/video#{ g }_#{ p[ :id ] }" )
           emb.add_field( name: "Название", value: p[ :title ] )
-          emb.image = Discordrb::Webhooks::EmbedImage.new( url: p[ img ] ) 
+          emb.image = Discordrb::Webhooks::EmbedImage.new( url: img[ :url ] ) 
         when "doc"
           p = attach[ :doc ]
 
@@ -129,8 +129,7 @@ module DiscordBot
         channel = s_ch & @names
 
         if channel.empty? then next; end
-        msg = @bot.send_message( @channels[ serv ][ channel[ 0 ] ], '', false, emb )
-        msg.react '❤'
+        @bot.send_message( @channels[ serv ][ channel[ 0 ] ], '', false, emb )
       end
 
       local_variables.each { | var | eval( "#{ var } = nil" ) }
