@@ -6,6 +6,8 @@ module DiscordBot
   class Main
     attr_accessor :bot, :channels, :config, :thr
 
+    Discordrb::LOGGER = Discordrb::Logger.new(false, [File.open('dbg_aj.txt', 'a+')])
+
     def initialize
       unless File.exists?( 'cfg.json' )
         File.open( 'cfg.json', 'w+' ) {|f| f.write( JSON.pretty_generate({ 
@@ -29,6 +31,17 @@ module DiscordBot
         prefix: @config[ 'prefix' ],
         help_command: false,
         ignore_bots: true,
+        log_mode: :debug,
+        intents: [
+          :servers,
+          :server_members,
+          :server_bans,
+          :server_emojis,
+          :server_webhooks,
+          :server_messages,
+          :server_message_reactions,
+          :direct_messages
+        ],
         no_permission_message: "Недостаточно прав, чтобы выполнить действие."
       )
       @channels = {}
@@ -41,7 +54,6 @@ module DiscordBot
     def start
       @bot.ready do | e |
         puts "Ready!"
-        @bot.update_status( 'Discord Ruby', 'Loading...', nil )
         @bot.set_user_permission( @config[ 'owner' ], 3 )
 
         update_info
@@ -122,6 +134,13 @@ module DiscordBot
 
       @bot.raw do | e |
         update_info
+        ev = @bot.servers[285482504817868800]
+
+        next if ev.nil?
+        if ev.channels.count == 0 then
+          Discordrb::LOGGER.info("[TRACKER] GOT ZERO CHANNELS, GG")
+          @bot.stop
+        end
       end
 
       @bot.run
@@ -131,20 +150,16 @@ module DiscordBot
       Thread.new {
         DiscordBot.constants.select do | c |
           if DiscordBot.const_get( c ).is_a? Class then
-            if c.to_s == "Main" then
-              next
-            end
+            next if c.to_s == "Main"
 
             m = DiscordBot.const_get( c ).new( self )
 
-            if DiscordBot.const_get( c ).method_defined? "commands" then
-              m.commands
-            end
+            m.commands if DiscordBot.const_get( c ).method_defined? "commands"
           end
         end
       }
     end
-    
+
     def update_info
       @bot.servers.each do | k, v |
         @channels[ k ] = {}
