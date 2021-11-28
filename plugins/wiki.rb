@@ -47,7 +47,7 @@ module DiscordBot
             get_data_from_api( w )
           rescue => err
             puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Error with wiki #{ w }"
-            @c.error_log( err, "WIKI" )
+            @c.error_log( "Error with wiki #{ w }\n" + err, "WIKI" )
           end
 
           sleep 3
@@ -60,9 +60,9 @@ module DiscordBot
     end
 
     def get_data_from_api( w )
-	    w_a = w.split( "." )
-	    form_url = w_a.count == 2 ?
-	             "https://#{ w_a[ 1 ] }.fandom.com/#{ w_a[ 0 ] }" :
+      w_a = w.split( "." )
+      form_url = w_a.count == 2 ?
+               "https://#{ w_a[ 1 ] }.fandom.com/#{ w_a[ 0 ] }" :
                "https://#{ w_a[ 0 ] }.fandom.com"
 
       d = JSON.parse(
@@ -86,12 +86,12 @@ module DiscordBot
       if rcid == 0 then
         @config[ 'wikies' ][ w ][ 'rcid' ] = last_rcid
         @c.save_config
-	    local_variables.each { | var | eval( "#{ var } = nil" ) }
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
       if last_rcid <= rcid then
-	    local_variables.each { | var | eval( "#{ var } = nil" ) }
+        local_variables.each { | var | eval( "#{ var } = nil" ) }
         return
       end
 
@@ -203,10 +203,10 @@ module DiscordBot
     end
 
     def add_wiki( e, w )
-	    if w =~ /(^https?:|(fandom|wikia)\.com)/
-		    e.respond "<@#{ e.user.id }>, неправильно указана вики. Пример - ru.community (формируется в соответствии с адресной строкой //**community**.fandom.com/**ru**/wiki)."
-		    return;
-	    end
+      if w =~ /(^https?:|(fandom|wikia)\.com)/
+        e.respond "<@#{ e.user.id }>, неправильно указана вики. Пример - ru.community (формируется в соответствии с адресной строкой //**community**.fandom.com/**ru**/wiki)."
+        return;
+      end
 
       id = e.server.id
       s_ch = @channels[ id ].keys
