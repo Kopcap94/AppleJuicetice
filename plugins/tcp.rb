@@ -1,3 +1,4 @@
+
 require 'socket'
 
 module DiscordBot
@@ -9,6 +10,7 @@ module DiscordBot
       @config = client.config
       @thr = client.thr
       @names = [ 'recentchanges', 'wiki-activity', 'правки', 'активность', 'вики-активность' ]
+      @del_id = 0
 
       for_init
     end
@@ -41,20 +43,27 @@ module DiscordBot
     end
 
     def send_info( data )
+      if data[ "action" ] == "deleted" and data[ "type" ] == "message-wall-thread"
+        d_id = data[ "url" ].gsub( /.*threadId=(\d+)/, '\1' )
+        return if d_id == @del_id
+
+        @del_id = d_id
+      end
+
       emb = Discordrb::Webhooks::Embed.new
       cat_name = "Категория"
 
       case data[ "action" ]
       when "deleted"
-        action = "Удалено"
+        action = "🗑️ • Удалено"
       when "created"
-        action = "Создано"
+        action = "🗨️ • Создано"
       when "modified"
-        action = "Отредактировано"
+        action = "📝 • Отредактировано"
       when "moved"
-        action = "Перемещено"
+        action = "📁 • Перемещено"
       when "un-delete"
-        action = "Восстановлено"
+        action = "🗃️ • Восстановлено"
       else
         action = data[ "action" ]
       end
@@ -101,7 +110,7 @@ module DiscordBot
       emb.add_field( name: "Заголовок", value: title )
       emb.add_field( name: "Текст", value: text )
 
-      @config[ "wikies" ][ data[ "wiki" ] ][ "servers" ].each do | id |
+      @config[ "wikies" ][ data[ "wiki" ] ][ "servers" ].clone.each do | id |
         if @channels[ id ].nil? then next; end
 
         s_ch = @channels[ id ].keys
