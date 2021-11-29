@@ -80,8 +80,8 @@ module DiscordBot
       @client.save_config
 
       if !resp[ :copy_history ].nil? then
-        resp[ :copy_history ][ :id ] = resp[ :id ]
-        resp = resp[ :copy_history ]
+        resp[ :copy_history ][ 0 ][ :id ] = resp[ :id ]
+        resp = resp[ :copy_history ][ 0 ]
       end
 
       emb = Discordrb::Webhooks::Embed.new

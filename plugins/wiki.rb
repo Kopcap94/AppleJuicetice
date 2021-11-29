@@ -47,7 +47,7 @@ module DiscordBot
             get_data_from_api( w )
           rescue => err
             puts "#{ Time.now.strftime "[%Y-%m-%d %H:%M:%S]" } Error with wiki #{ w }"
-            @c.error_log( "Error with wiki #{ w }\n" + err, "WIKI" )
+            @c.error_log( "Wiki #{ w }\n" + err, "WIKI" )
           end
 
           sleep 3
@@ -111,7 +111,6 @@ module DiscordBot
           emb.color = "#507299"
 
           title = "[ #{ w } ] #{ obj[ :title ] }"
-          if [ 110, 111, 1200, 1201, 1202, 2001, 2002 ].index( obj[ :ns ] ) then title = "[ #{ w } ] Тема на форуме или стене обсуждения" end
 
           emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: title, url: "#{ form_url }/index.php?title=#{ obj[ :title ].gsub( /\s/, "_" ) }" )
           emb.title = "#{ form_url }/index.php?diff=#{ obj[ :revid ] }"
@@ -171,7 +170,7 @@ module DiscordBot
 
           # Blocks
           if obj[ :logaction ] == 'block' then
-            if (!obj[ :block ].nil?) then
+            if ( !obj[ :block ].nil? ) then
               emb.add_field( name: "Истекает", value: obj[ :block ][ :expiry ], inline: true )
             else
               emb.add_field( name: "Истекает", value: obj[ :logparams ][ :expiry ], inline: true )
@@ -203,7 +202,7 @@ module DiscordBot
     end
 
     def add_wiki( e, w )
-      if w =~ /(^https?:|(fandom|wikia)\.com)/
+      if w =~ /(^https?:|fandom\.com)/
         e.respond "<@#{ e.user.id }>, неправильно указана вики. Пример - ru.community (формируется в соответствии с адресной строкой //**community**.fandom.com/**ru**/wiki)."
         return;
       end
