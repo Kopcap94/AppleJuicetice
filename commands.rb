@@ -169,7 +169,7 @@ module DiscordBot
     end
 
     def avatar( e, a )
-      if a.to_s !~ /<@!?\d*>/ or a.to_s !~ /^\d{18,}/ then
+      if a.to_s !~ /<@!?\d*>/ and a.to_s !~ /^\d{18,}/ then
         e.respond "Неправильно выбран участник."
         return
       end
