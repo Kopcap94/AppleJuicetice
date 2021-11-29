@@ -1,12 +1,13 @@
 require 'discordrb'
 require 'json'
 require 'httparty'
+require 'down'
 
 module DiscordBot
   class Main
     attr_accessor :bot, :channels, :config, :thr
 
-    Discordrb::LOGGER = Discordrb::Logger.new(false, [File.open('dbg_aj.txt', 'a+')])
+    #Discordrb::LOGGER = Discordrb::Logger.new(false, [File.open('dbg_aj.txt', 'a+')])
 
     def initialize
       unless File.exists?( 'cfg.json' )
@@ -18,8 +19,7 @@ module DiscordBot
           'wikies' => {},
           'groups' => { 'access_token' => '' },
           'ignored' => [],
-          'blacklisted' => [],
-          'exclude welcome' => []
+          'blacklisted' => []
         }))}
         puts "Создан новый конфиг, заполните его."
       end
@@ -31,7 +31,7 @@ module DiscordBot
         prefix: @config[ 'prefix' ],
         help_command: false,
         ignore_bots: true,
-        log_mode: :debug,
+        #log_mode: :debug,
         intents: [
           :servers,
           :server_members,
@@ -66,14 +66,14 @@ module DiscordBot
           @started = true
         end
 
-        @bot.update_status( 'Discord Ruby', '!help/!get_help', nil )
+        @bot.update_status( 'online', '!help/!get_help', nil, 0, false, 3 )
       end
 
       @bot.pm do | e |
-        if e.user.id != @config[ 'owner' ] then
-          b = e.message.timestamp.to_s.gsub( /\s\+\d+$/, '' ) + " #{ e.user.name } [#{ e.user.id }]: "
-          File.open( 'pm.log', 'a' ) { |f| f.write( b + e.message.content.split( "\n" ).join( "\n" + b ) + "\n" ) }
-        end
+        next if e.user.id == @config[ 'owner' ]
+
+        b = e.message.timestamp.to_s.gsub( /\s\+\d+$/, '' ) + " #{ e.user.name } [#{ e.user.id }]: "
+        File.open( 'pm.log', 'a' ) { |f| f.write( b + e.message.content.split( "\n" ).join( "\n" + b ) + "\n" ) }
       end
 
       @bot.server_create do | e |
@@ -88,27 +88,37 @@ module DiscordBot
       end
 
       @bot.member_join do | e |
-        s = e.server
-        c = e.server.general_channel
+        next unless @bot.profile.id != e.user.id
+        next if e.server.id != 285482504817868800
 
-        next if c.nil?
+        @bot.stop if e.server.channels.count == 0
 
-        if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
-          c.send_message "Добро пожаловать на сервер, <@#{ e.user.id }>. Пожалуйста, ознакомьтесь с правилами данного дискорд-сервера."
-        end
+        emb = Discordrb::Webhooks::Embed.new
+
+        emb.color = "#00FF00"
+        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "Пополнение в рядах", url: "" )
+        emb.add_field( name: "Discord ID", value: "#{ e.user.name }##{ e.user.discriminator }" )
+        emb.add_field( name: "Пинг", value: "<@#{ e.user.id }>" )
+        emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "https://cdn.discordapp.com/avatars/#{ e.user.id }/#{ e.user.avatar_id }.jpg?size=256" )
+
+        @bot.send_message( 914528930281697310, '', false, emb )
       end
 
       @bot.member_leave do | e |
         next unless @bot.profile.id != e.user.id
+        next if e.server.id != 285482504817868800
 
-        s = e.server
-        c = e.server.general_channel
+        @bot.stop if e.server.channels.count == 0
 
-        next if c.nil?
+        emb = Discordrb::Webhooks::Embed.new
 
-        if !@config[ 'exclude welcome' ].include?( s.id ) and can_do( s, 'send_messages', c ) then
-          c.send_message "#{ e.user.name } покинул сервер."
-        end
+        emb.color = "#FF0000"
+        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "Потери в рядах", url: "" )
+        emb.add_field( name: "Discord ID", value: "#{ e.user.name }##{ e.user.discriminator }" )
+        emb.add_field( name: "Пинг", value: "<@#{ e.user.id }>" )
+        emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "https://cdn.discordapp.com/avatars/#{ e.user.id }/#{ e.user.avatar_id }.jpg?size=256" )
+
+        @bot.send_message( 914528930281697310, '', false, emb )
       end
 
       @bot.mention do | e |
@@ -127,6 +137,12 @@ module DiscordBot
           "вы просите меня выполнять ваши команды. Но вы даже не говорите пожалуйста...",
           "прекращай.",
           "ну ещё пять минуточек...",
+          "да что тебе нужно, мешок с костями?",
+          "себя попингуй.",
+          "https://www.youtube.com/watch?v=jfrL4GFsyDY",
+          "https://www.youtube.com/watch?v=a8c5wmeOL9o",
+          "https://www.youtube.com/watch?v=ZfqgGXdJKK0",
+          "https://www.youtube.com/watch?v=hd5hQkfB_xQ",
           "почему? Во имя чего? Зачем, зачем Вы используете эту команду? Зачем продолжаете делать это? Неужели Вы верите в какую-то миссию или Вам просто интересно? Так в чем же миссия, может быть Вы откроете? Это развлечение, интерес или Вы скучаете? Хрупкие логические теории человека, который отчаянно пытается оправдать свои действия: бесцельные и бессмысленные. Почему, #{ e.user.name }, почему Вы упорствуете?"
         ]
         e.respond "<@#{ e.user.id }>, #{ a.sample }"
@@ -134,13 +150,42 @@ module DiscordBot
 
       @bot.raw do | e |
         update_info
-        ev = @bot.servers[285482504817868800]
+      end
 
-        next if ev.nil?
-        if ev.channels.count == 0 then
-          Discordrb::LOGGER.info("[TRACKER] GOT ZERO CHANNELS, GG")
-          @bot.stop
+      @bot.reaction_add( emoji: "⚠️" ) do | e |
+        next if !@bot.permission?( e.user, 2, e.server )
+        next if e.server.id != 285482504817868800
+
+        msg = e.message
+        a = msg.author
+        emb = Discordrb::Webhooks::Embed.new
+
+        emb.color = "#FF0000"
+        emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: "[ #{ msg.id } ] Снесено по ⚠️", url: "" )
+        emb.add_field( name: "Автор", value: "<@#{ a.id }> [#{ a.name }##{ a.discriminator }]" )
+        emb.add_field( name: "Исполнитель", value: "<@#{ e.user.id }>" )
+        emb.add_field( name: "Канал", value: "<##{ msg.channel.id }>" )
+        emb.add_field( name: "Содержимое", value: ( msg.content != "" ? msg.content[0..500] : "-" ) )
+        emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: "https://cdn.discordapp.com/avatars/#{ a.id }/#{ a.avatar_id }.jpg?size=256" )
+
+        if ( msg.content =~ /^https?:\/\/[^\s]+$/ )
+          emb.image = Discordrb::Webhooks::EmbedImage.new( url: msg.content.match( /^https?:\/\/[^\s]+$/ )[0] )
         end
+
+        @bot.send_message( 914861657849741322, "", false, emb )
+
+        if ( msg.attachments.count != 0 )
+          begin
+            img = Down.download( msg.attachments[0].url )
+            @bot.send_file( 914861657849741322, img, caption: "[ #{ msg.id } ] Вложение к сообщению" )
+            img = nil
+          rescue => e
+            puts e.inspect
+            @bot.send_message( 914861657849741322, "Косяк при сохранении вложения, хехе", false )
+          end
+        end
+
+        msg.delete()
       end
 
       @bot.run
