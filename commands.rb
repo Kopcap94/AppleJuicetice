@@ -35,21 +35,6 @@ module DiscordBot
       ) do | e, u | avatar( e, u ) end
 
       @bot.command(
-        :ew,
-        permission_level: 2,
-        description: "Данная команда позволяет исключить сообщения о присоединении и выходе участников на/с сервера.",
-        usage: "!ew",
-        permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e | exclude( e ) end
-
-      @bot.command(
-        :bl,
-        permission_level: 3,
-        usage: "!bl <id>",
-        permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e, id | blacklist( e, id ) end
-
-      @bot.command(
         :drop,
         permission_level: 2,
         description: "С помощью данной команды бот покинет ваш сервер.",
@@ -64,6 +49,22 @@ module DiscordBot
         usage: "!empty",
         permission_message: "Недостаточно прав, чтобы использовать эту команду."
       ) do | e | empty_roles( e ) end
+
+      @bot.command(
+        :nuke,
+        permission_level: 2,
+        min_args: 1,
+        description: "Удаляет указанное кол-во сообщений. Число сообщений для удаления должно быть в диапазоне от 2 до 100.",
+        usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10",
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
+      ) do | e, i | nuke( e, i ) end
+
+      @bot.command(
+        :bl,
+        permission_level: 3,
+        usage: "!bl <id>",
+        permission_message: "Недостаточно прав, чтобы использовать эту команду."
+      ) do | e, id | blacklist( e, id ) end
 
       @bot.command(
         :ign,
@@ -100,15 +101,6 @@ module DiscordBot
       end
 
       @bot.command(
-        :nuke,
-        permission_level: 2,
-        min_args: 1,
-        description: "Удаляет указанное кол-во сообщений. Число сообщений для удаления должно быть в диапазоне от 2 до 100.",
-        usage: "Требует указать число в диапазоне от 2 до 100: !nuke 10",
-        permission_message: "Недостаточно прав, чтобы использовать эту команду."
-      ) do | e, i | nuke( e, i ) end
-
-      @bot.command(
         :die,
         permission_level: 3
       ) do | e | die( e ) end
@@ -127,9 +119,9 @@ module DiscordBot
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'Список команд бота', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
 
         @bot.commands.each do | k, v |
-          if v.attributes[ :permission_level ] == 3 or ( !v.attributes[ :parameters ].nil? and v.attributes[ :parameters ][ :hidden ] ) then next; end
+          next if v.attributes[ :permission_level ] == 3
 
-          text = "**Уровень доступа:** #{v.attributes[ :permission_level ] != 2 ? "все участники" : "модераторы и администраторы"}\n**Описание:** #{ v.attributes[ :description ] }\n**Использование:** #{ v.attributes[ :usage ] }"
+          text = "**Уровень доступа:** #{ v.attributes[ :permission_level ] != 2 ? "все участники" : "модераторы и администраторы" }\n**Описание:** #{ v.attributes[ :description ] }\n**Использование:** #{ v.attributes[ :usage ] }"
           emb.add_field( name: "#{ @bot.prefix }#{ v.name }", value: text )
         end
       end
@@ -162,6 +154,7 @@ module DiscordBot
     def stats( e )
       ram = %x{ free }.lines.to_a[ 1 ].split[ 1, 3 ].map { | v | ( v.to_f / 1024.0 ).to_i }
       cpu = %x{ top -n1 }.lines.find{ | l | /Cpu\(s\):/.match( l ) }.split[ 1 ]
+      upt = %x{ uptime -p }.sub( "up ", "" )
 
       e.channel.send_embed do | emb |
         emb.color = "#FFA500"
@@ -169,19 +162,21 @@ module DiscordBot
         emb.title = "Текущая статистика сервера"
         emb.add_field( name: "CPU", value: "#{ cpu }%", inline: true )
         emb.add_field( name: "RAM", value: "#{ ram[ 1 ] }/#{ ram[ 0 ] } mb [#{ ( ( ram[ 1 ].to_f * 100.0 ) / ram[ 0 ].to_f ).to_i }%]", inline: true )
+        emb.add_field( name: "Uptime", value: upt, inline: false )
 
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
       end
     end
 
     def avatar( e, a )
-      if a.to_s !~ /<@!?\d*>/ then
+      if a.to_s !~ /<@!?\d*>/ or a.to_s !~ /^\d{18,}/ then
         e.respond "Неправильно выбран участник."
         return
       end
 
       a = @c.parse( a )
       u = @bot.users.find { | u | u[ 0 ] == a }
+
       if u.nil? then
         e.respond "<@#{ e.user.id }>, такого участника нет на сервере."
         return
@@ -190,22 +185,8 @@ module DiscordBot
       e.respond "<@#{ e.user.id }>, https://cdn.discordapp.com/avatars/#{ a }/#{ u[ 1 ].avatar_id }.jpg?size=512"
     end
 
-    def exclude( e )
-      id = e.server.id
-
-      if @config[ 'exclude welcome' ].include? id then
-        return;
-      end
-
-      @config[ 'exclude welcome' ].push( id )
-      @c.save_config
-      e.respond "Сервер исключён."
-    end
-
     def blacklist( e, id = nil )
-      if id.nil? then
-        id = e.server.id.to_s
-      end
+      id = id.nil ? e.server.id.to_s : id
 
       id = @c.parse( id )
       if @config[ 'blacklisted' ].include?( id ) then
@@ -249,7 +230,7 @@ module DiscordBot
         emb.color = "#4A804C"
 
         emb.title = "#{ e.user.name }, Я - Яблочное Сокосудие!"
-        emb.description = "Это бот, написанный на языке программирования Ruby. Основной фрейм для работы с Discord-ом - гем discordrb. Дополнительные гемы - HTTParty и JSON."
+        emb.description = "Это бот, написанный на языке программирования Ruby. Основной фрейм для работы с Discord-ом - гем discordrb. Дополнительные гемы - HTTParty и Down."
 
         emb.author = Discordrb::Webhooks::EmbedAuthor.new( name: 'AppleJuicetice', url: 'https://github.com/Kopcap94/Discord-AJ', icon_url: 'http://images3.wikia.nocookie.net/siegenax/ru/images/2/2c/CM.png' )
         emb.thumbnail = Discordrb::Webhooks::EmbedThumbnail.new( url: 'http://images2.wikia.nocookie.net/siegenax/ru/images/8/84/1_obey-giant_1024.png' )
